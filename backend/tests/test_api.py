@@ -9,9 +9,12 @@ os.environ.update(
         "VERIS_ENV": "development",
         "VERIS_EMBEDDING_MODEL": "hashing",
         "VERIS_DATABASE_URL": "sqlite:///:memory:",
+        "VERIS_SYNTHESIS_MODEL": "claude-sonnet-5",
+        # Explicit empty beats any .env file (popping does not — pydantic
+        # settings would still read the key from ../.env and hit the real API)
+        "ANTHROPIC_API_KEY": "",
     }
 )
-os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -26,7 +29,7 @@ def test_api_surface():
 
         stats = client.get("/v1/stats").json()
         assert stats["papers"] == 0
-        assert stats["synthesis_model"] == "claude-opus-4-8"
+        assert stats["synthesis_model"] == "claude-sonnet-5"
 
         assert client.get("/v1/papers").json() == []
 

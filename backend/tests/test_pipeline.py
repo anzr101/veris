@@ -15,9 +15,9 @@ os.environ.update(
         "VERIS_ENV": "development",
         "VERIS_EMBEDDING_MODEL": "hashing",
         "VERIS_DATABASE_URL": "sqlite:///:memory:",
+        "ANTHROPIC_API_KEY": "",
     }
 )
-os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from veris.config import get_settings  # noqa: E402
 from veris.domain.models import ChunkInput, Paper  # noqa: E402
