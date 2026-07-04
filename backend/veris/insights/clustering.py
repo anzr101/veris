@@ -66,18 +66,20 @@ async def label_clusters(
 
     async def _one(cid: int, titles: list[str]) -> tuple[int, tuple[str, str]]:
         prompt = "Titles in this cluster:\n" + "\n".join(f"- {t}" for t in titles)
-        result = await router.complete(
-            ModelTier.UTILITY,
-            prompt=prompt,
-            system=_LABEL_SYSTEM,
-            stage="cluster_label",
-            max_tokens=120,
-            json_schema=_LABEL_SCHEMA,
-        )
         try:
+            result = await router.complete(
+                ModelTier.UTILITY,
+                prompt=prompt,
+                system=_LABEL_SYSTEM,
+                stage="cluster_label",
+                max_tokens=120,
+                json_schema=_LABEL_SCHEMA,
+            )
             data = json.loads(result.text)
             return cid, (str(data.get("label", "")).strip(), str(data.get("description", "")).strip())
-        except json.JSONDecodeError:
+        except Exception:
+            # LLM unavailable (no key, no credit, outage) or bad JSON —
+            # the map must still render; category fallback fills the label.
             return cid, ("", "")
 
     pairs = await asyncio.gather(*(_one(cid, titles) for cid, titles in reps.items()))
