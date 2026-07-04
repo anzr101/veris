@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Space Grotesk", ui-monospace, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer base {
+  *:focus-visible {
+    outline: 2px solid rgba(216, 178, 106, 0.55);
+    outline-offset: 3px;
+    border-radius: 5px;
+  }
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+body {
+  @apply bg-ink text-bone font-sans antialiased;
+  letter-spacing: -0.006em;
+  background-image:
+    radial-gradient(1100px 620px at 86% -12%, rgba(216, 178, 106, 0.07), transparent 60%),
+    radial-gradient(760px 560px at 2% 2%, rgba(155, 181, 154, 0.04), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Crisp, aligned figures for data and labels in the unified typeface. */
+.font-mono {
+  font-feature-settings: "tnum" 1;
+}
+
+/* Topographic contour — the cartographic signature, kept very faint. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: repeating-radial-gradient(
+    circle at 84% 14%,
+    rgba(216, 178, 106, 0.045) 0 1px,
+    transparent 1px 72px
+  );
+  -webkit-mask-image: radial-gradient(110% 110% at 84% 8%, black, transparent 68%);
+  mask-image: radial-gradient(110% 110% at 84% 8%, black, transparent 68%);
+}
+
+/* Fine film grain so the dark surface never looks flat. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgba(216, 178, 106, 0.26);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-thumb {
+  background: #24242b;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #33333b;
+  background-clip: content-box;
+}
+
+@layer components {
+  .glass {
+    @apply border border-white/[0.07] bg-ink-50/70 backdrop-blur-xl;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+  }
+  .hairline {
+    @apply border border-white/[0.07];
+  }
+  .rule {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
+  }
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02]
+           px-4 py-2 text-[13px] text-mist transition-all duration-300
+           hover:border-signal/40 hover:bg-white/[0.04] hover:text-bone-bright;
+  }
+  .panel {
+    @apply rounded-2xl border border-white/[0.06] bg-white/[0.012];
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+  }
+  .panel-hover {
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:border-signal/20
+           hover:bg-white/[0.025];
+  }
+  .kicker {
+    @apply font-mono text-[10.5px] uppercase tracking-kicker text-faint;
+  }
+  .index-num {
+    @apply font-mono text-[11px] tracking-[0.2em] text-signal/70;
+  }
+  /* Editorial section header: index · rule · kicker */
+  .eyebrow {
+    @apply mb-7 flex items-center gap-4;
+  }
+}
+
+/* Markdown answer typography */
+.prose-veris {
+  @apply text-[15.5px] leading-[1.78] text-bone/90;
+}
+.prose-veris p {
+  @apply my-3.5;
+}
+.prose-veris h1,
+.prose-veris h2,
+.prose-veris h3 {
+  @apply mt-6 mb-2 font-display font-medium text-bone-bright;
+}
+.prose-veris h2 {
+  @apply text-xl;
+}
+.prose-veris h3 {
+  @apply text-lg;
+}
+.prose-veris ul {
+  @apply my-3 list-disc space-y-1.5 pl-5 marker:text-signal/50;
+}
+.prose-veris ol {
+  @apply my-3 list-decimal space-y-1.5 pl-5 marker:text-signal/50;
+}
+.prose-veris strong {
+  @apply font-semibold text-bone-bright;
+}
+.prose-veris a {
+  @apply text-signal underline decoration-signal/30 underline-offset-2;
+}
+.prose-veris code {
+  @apply rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[13px] text-signal;
+}
+
+.streaming-caret::after {
+  content: "▍";
+  @apply ml-0.5 animate-pulse text-signal;
+}

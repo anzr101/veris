@@ -1,0 +1,44 @@
+# Local full stack: pgvector Postgres + API + frontend.
+# Ingestion runs via `python -m veris.ingest` or POST /v1/ingest — no queue needed.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: veris
+      POSTGRES_PASSWORD: veris
+      POSTGRES_DB: veris
+    ports:
+      - "5432:5432"
+    volumes:
+      - veris_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veris -d veris"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    env_file: .env
+    environment:
+      VERIS_DATABASE_URL: postgresql+asyncpg://veris:veris@db:5432/veris
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn veris.main:app --host 0.0.0.0 --port 8000
+
+  web:
+    build:
+      context: ./frontend
+    environment:
+      BACKEND_INTERNAL_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  veris_pgdata:
