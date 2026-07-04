@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS papers (
     published_at TIMESTAMPTZ,
     updated_at   TIMESTAMPTZ,
     pdf_url      TEXT,
-    raw_meta     JSONB NOT NULL DEFAULT '{}'
+    raw_meta     JSONB NOT NULL DEFAULT '{{}}'
 );
 CREATE INDEX IF NOT EXISTS idx_papers_published ON papers (published_at DESC);
 
