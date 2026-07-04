@@ -13,9 +13,22 @@ router = APIRouter()
 
 
 @router.get("/map")
-async def get_map() -> dict:
-    """Serve the precomputed map artifact (or a placeholder if none built yet)."""
+async def get_map(services: Services = Depends(get_services)) -> dict:
+    """Serve the map artifact, building it lazily if absent.
+
+    The artifact is a file, and container filesystems are ephemeral — after a
+    restart the file is gone even though the corpus survives in Postgres, so
+    the first request after boot rebuilds it (one-time ~15s + a few utility-
+    model label calls) and every later request reads the file.
+    """
     artifact = load_map()
+    if artifact is None and await services.store.count_papers() > 0:
+        artifact = await build_map(
+            services.store,
+            router_from(services),
+            embedding_model=services.settings.embedding_model,
+        )
+        save_map(artifact)
     if artifact is None:
         return {
             "built_at": None,
@@ -23,7 +36,7 @@ async def get_map() -> dict:
             "nodes": [],
             "clusters": [],
             "edges": [],
-            "note": "No map yet. Run `python -m veris.buildmap` after ingesting a corpus.",
+            "note": "No corpus yet. Ingest papers first (POST /v1/ingest).",
         }
     return artifact.model_dump()
 
