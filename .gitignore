@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+dist/
+build/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# Data & models
+data/
+*.sqlite3
+*.db
+models/cache/
+.fastembed_cache/
+
+# Generated artifacts (precomputed per-corpus)
+backend/veris/insights/results/
+backend/veris/evals/results/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local tooling
+.claude/settings.local.json
+
+# Logs
+*.log
