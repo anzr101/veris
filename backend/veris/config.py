@@ -34,12 +34,22 @@ class Settings(BaseSettings):
     # Infrastructure
     database_url: str = "postgresql+asyncpg://veris:veris@localhost:5432/veris"
 
-    # LLM — Claude, cost-tiered. ``anthropic_api_key`` is read without the VERIS_ prefix.
-    # Sonnet for synthesis (near-Opus quality on grounded writing, 5x cheaper
-    # output), Haiku for planning/verification.
+    # LLM — cost-tiered behind a provider port. ``llm_provider`` picks the adapter:
+    #   auto      → Claude if ANTHROPIC_API_KEY is set, else HF router if HF_TOKEN is
+    #               set, else the deterministic stub
+    #   anthropic / hf / stub → force that adapter
+    # ``anthropic_api_key`` / ``hf_token`` are read without the VERIS_ prefix.
+    llm_provider: Literal["auto", "anthropic", "hf", "stub"] = "auto"
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     synthesis_model: str = "claude-sonnet-5"
     utility_model: str = "claude-haiku-4-5-20251001"
+
+    # OpenAI-compatible route (Hugging Face Inference Providers by default). Any
+    # /chat/completions endpoint works: Groq, Together, OpenRouter, local vLLM…
+    hf_token: str = Field(default="", alias="HF_TOKEN")
+    llm_base_url: str = "https://router.huggingface.co/v1"
+    oss_synthesis_model: str = "meta-llama/Llama-3.3-70B-Instruct"
+    oss_utility_model: str = "meta-llama/Llama-3.1-8B-Instruct"
 
     # Embeddings & reranking (local ONNX via fastembed)
     embedding_model: str = "BAAI/bge-small-en-v1.5"
@@ -54,6 +64,31 @@ class Settings(BaseSettings):
     # Ingestion
     arxiv_api_url: str = "https://export.arxiv.org/api/query"
     ingest_batch_size: int = 50
+
+    @property
+    def active_llm_provider(self) -> Literal["anthropic", "hf", "stub"]:
+        """Resolve ``auto`` to the adapter the factory will actually build."""
+        if self.llm_provider != "auto":
+            return self.llm_provider
+        if self.anthropic_api_key:
+            return "anthropic"
+        if self.hf_token:
+            return "hf"
+        return "stub"
+
+    @property
+    def effective_synthesis_model(self) -> str:
+        """Synthesis model id for the active adapter (Claude vs open-weights)."""
+        if self.active_llm_provider == "hf":
+            return self.oss_synthesis_model
+        return self.synthesis_model
+
+    @property
+    def effective_utility_model(self) -> str:
+        """Utility model id for the active adapter (Claude vs open-weights)."""
+        if self.active_llm_provider == "hf":
+            return self.oss_utility_model
+        return self.utility_model
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -47,7 +47,7 @@ export function AskExperience() {
         ...prev,
         stage: "done",
         error:
-          "Couldn't reach the Fractor backend. Start it with `make up` (or `uvicorn veris.main:app`) and ensure a corpus is ingested.",
+          "Couldn't reach the Veris backend. Start it with `make up` (or `uvicorn veris.main:app`) and ensure a corpus is ingested.",
       }));
     }
   }, []);
@@ -211,6 +211,10 @@ function reduce(prev: AskState, event: string, data: unknown): AskState {
     }
     case "contradictions":
       return { ...prev, contradictions: data as Contradiction[] };
+    case "error": {
+      const d = data as { detail?: string };
+      return { ...prev, stage: "done", error: d?.detail ?? "The LLM provider is unavailable right now." };
+    }
     case "done": {
       const d = data as { model: string; cost_usd: number; latency_ms: number };
       return { ...prev, stage: "done", model: d.model, cost_usd: d.cost_usd, latency_ms: d.latency_ms };

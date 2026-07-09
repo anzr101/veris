@@ -22,7 +22,9 @@ _log = get_logger("veris.buildmap")
 def router_from(services: Services) -> LLMRouter:
     s = services.settings
     return LLMRouter(
-        services.provider, synthesis_model=s.synthesis_model, utility_model=s.utility_model
+        services.provider,
+        synthesis_model=s.effective_synthesis_model,
+        utility_model=s.effective_utility_model,
     )
 
 

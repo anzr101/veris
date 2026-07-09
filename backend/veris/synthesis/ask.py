@@ -38,8 +38,8 @@ class AskService:
     def _router(self, tracer: Tracer) -> LLMRouter:
         return LLMRouter(
             self._provider,
-            synthesis_model=self._settings.synthesis_model,
-            utility_model=self._settings.utility_model,
+            synthesis_model=self._settings.effective_synthesis_model,
+            utility_model=self._settings.effective_utility_model,
             tracer=tracer,
         )
 
@@ -112,7 +112,7 @@ class AskService:
         yield {
             "type": "done",
             "data": {
-                "model": self._settings.synthesis_model,
+                "model": self._settings.effective_synthesis_model,
                 "cost_usd": round(tracer.total_cost_usd, 6),
                 "latency_ms": round((time.perf_counter() - start) * 1000, 1),
             },

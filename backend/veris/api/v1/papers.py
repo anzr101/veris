@@ -19,8 +19,8 @@ async def stats(services: Services = Depends(get_services)) -> StatsResponse:
         papers=await services.store.count_papers(),
         chunks=await services.store.count_chunks(),
         embedding_model=services.embedder.name,
-        synthesis_model=services.settings.synthesis_model,
-        utility_model=services.settings.utility_model,
+        synthesis_model=services.settings.effective_synthesis_model,
+        utility_model=services.settings.effective_utility_model,
     )
 
 
