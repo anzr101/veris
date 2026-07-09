@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
@@ -27,9 +28,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     app.state.services = await Services.create(settings)
     log.info("veris.ready", embedding_model=settings.embedding_model)
+
+    seed_task: asyncio.Task[None] | None = None
+    if settings.seed_topics:
+        from veris.api.seeding import seed_if_empty
+
+        seed_task = asyncio.create_task(seed_if_empty(app.state.services, settings))
+
     try:
         yield
     finally:
+        if seed_task is not None and not seed_task.done():
+            seed_task.cancel()
         await app.state.services.close()
         log.info("veris.shutdown")
 

@@ -27,7 +27,7 @@ export default function ExplorePage() {
     <div className="mx-auto max-w-6xl px-6 py-20">
       <PageHeader index="04" kicker="The corpus" title="Explore the index">
         Papers ingested from arXiv (cs.LG / cs.CL / cs.AI), chunked and embedded for hybrid
-        retrieval. The evidence Fractor grounds its answers in.
+        retrieval. The evidence Veris grounds its answers in.
       </PageHeader>
 
       {stats && (

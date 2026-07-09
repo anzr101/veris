@@ -22,7 +22,7 @@ export function Navbar() {
           <Logo className="h-8 w-8" />
           <span className="leading-none">
             <span className="block font-display text-[20px] tracking-tight text-bone-bright">
-              Fractor
+              Veris
             </span>
             <span className="kicker mt-[3px] hidden sm:block">Atlas of research</span>
           </span>
