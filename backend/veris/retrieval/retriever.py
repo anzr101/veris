@@ -51,6 +51,8 @@ class HybridRetriever:
         top_k = top_k or self._settings.rerank_top_k
         per_query: list[list[ScoredChunk]] = []
         for q in queries:
-            per_query.append(await self.retrieve(q, filters=filters, top_k=self._settings.dense_top_k))
+            per_query.append(
+                await self.retrieve(q, filters=filters, top_k=self._settings.dense_top_k)
+            )
         fused = reciprocal_rank_fusion(per_query, k=self._settings.rrf_k)
         return self._reranker.rerank(" ".join(queries), fused, top_k=top_k)

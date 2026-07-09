@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -31,7 +31,7 @@ def _fallback_label(categories: list[str], cid: int) -> str:
 
 async def build_map(store: Store, router: LLMRouter, *, embedding_model: str = "") -> MapArtifact:
     pvs = await store.fetch_all_paper_vectors()
-    built_at = datetime.now(timezone.utc).isoformat()
+    built_at = datetime.now(UTC).isoformat()
     if not pvs:
         return MapArtifact(built_at=built_at, embedding_model=embedding_model, n_papers=0)
 

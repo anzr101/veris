@@ -14,7 +14,7 @@ def _pca_2d(vectors: np.ndarray) -> np.ndarray:
     centered = vectors - vectors.mean(axis=0, keepdims=True)
     # Top-2 right singular vectors → first two principal components.
     _, _, vt = np.linalg.svd(centered, full_matrices=False)
-    return centered @ vt[:2].T
+    return np.asarray(centered @ vt[:2].T)
 
 
 def _scale(coords: np.ndarray, lo: float = 0.0, hi: float = 100.0) -> np.ndarray:
@@ -55,7 +55,7 @@ def project_2d(vectors: np.ndarray) -> np.ndarray:
         return _scale(coords) if n >= 2 else coords
 
     try:
-        import umap  # type: ignore
+        import umap
 
         coords = np.asarray(
             umap.UMAP(

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from functools import cached_property
+from typing import ClassVar
 
 # Windows blocks the symlinks HuggingFace uses for its cache unless Developer Mode is on
 # (WinError 1314). Force plain file copies so the model download works for everyone.
@@ -18,7 +19,7 @@ os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 class FastEmbedEmbedder:
     # bge-small-en-v1.5 emits 384-dim vectors; kept as a constant to avoid a model
     # round-trip just to learn the dimensionality.
-    _KNOWN_DIMS = {
+    _KNOWN_DIMS: ClassVar[dict[str, int]] = {
         "BAAI/bge-small-en-v1.5": 384,
         "BAAI/bge-base-en-v1.5": 768,
     }
@@ -45,4 +46,5 @@ class FastEmbedEmbedder:
         return [v.tolist() for v in self._model.embed(texts)]
 
     def embed_query(self, text: str) -> list[float]:
-        return next(iter(self._model.query_embed(text))).tolist()
+        vector: list[float] = next(iter(self._model.query_embed(text))).tolist()
+        return vector

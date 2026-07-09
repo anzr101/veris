@@ -11,6 +11,7 @@ comes up under docker-compose with ``VERIS_ENV=production``.
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import asyncpg
 import numpy as np
@@ -196,7 +197,7 @@ class PostgresStore:
             JOIN papers p ON p.id = c.paper_id
             """
         )
-        grouped: dict[int, dict] = {}
+        grouped: dict[int, dict[str, Any]] = {}
         for row in rows:
             pid = int(row["paper_id"])
             entry = grouped.setdefault(
@@ -241,9 +242,9 @@ class PostgresStore:
 
 def _filter_sql(
     filters: RetrievalFilters | None, *, start: int, base: str = ""
-) -> tuple[str, list]:
+) -> tuple[str, list[Any]]:
     clauses: list[str] = [base] if base else []
-    args: list = []
+    args: list[Any] = []
     n = start
     if filters and filters.categories:
         clauses.append(f"p.categories ?| ${n}::text[]")

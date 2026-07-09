@@ -36,7 +36,13 @@ async def seed_if_empty(services: Services, settings: Settings) -> None:
             _log.info("seed.topic_done", topic=topic, papers=stats.papers)
         except Exception:
             _log.exception("seed.topic_failed", topic=topic)
+        # Rebuild the map after every topic, not just at the end: seeding a large
+        # corpus takes a while on a small container, and a progressively filling map
+        # beats an empty page (it also survives a restart mid-seed).
+        await _rebuild_map(services, settings)
 
+
+async def _rebuild_map(services: Services, settings: Settings) -> None:
     try:
         from veris.buildmap import router_from
         from veris.insights.map_builder import build_map, save_map
@@ -44,7 +50,8 @@ async def seed_if_empty(services: Services, settings: Settings) -> None:
         artifact = await build_map(
             services.store, router_from(services), embedding_model=settings.embedding_model
         )
-        save_map(artifact)
+        if artifact.n_papers > 0:
+            save_map(artifact)
         _log.info("seed.map_built", n_papers=artifact.n_papers)
     except Exception:
         _log.exception("seed.map_failed")

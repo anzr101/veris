@@ -102,7 +102,7 @@ class ArxivClient:
         sort_by: str = "submittedDate",
         sort_order: str = "descending",
     ) -> list[Paper]:
-        params = {
+        params: dict[str, str | int] = {
             "search_query": query,
             "start": start,
             "max_results": max_results,

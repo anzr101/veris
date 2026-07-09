@@ -42,8 +42,8 @@ def coauthor_edges(authors_per_paper: list[list[str]], *, max_edges: int = 600) 
             continue
         for x in range(len(papers)):
             for y in range(x + 1, len(papers)):
-                a, b = sorted((papers[x], papers[y]))
-                weights[(a, b)] = weights.get((a, b), 0) + 1
+                lo, hi = sorted((papers[x], papers[y]))
+                weights[(lo, hi)] = weights.get((lo, hi), 0) + 1
 
     ranked = sorted(weights.items(), key=lambda kv: kv[1], reverse=True)[:max_edges]
     return [MapEdge(source=a, target=b, weight=float(w), kind="coauthor") for (a, b), w in ranked]

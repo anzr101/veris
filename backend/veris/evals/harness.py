@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from veris.api.state import Services
 from veris.config import get_settings
@@ -25,17 +26,18 @@ _RESULTS_DIR = Path(__file__).parent / "results"
 RESULTS_PATH = _RESULTS_DIR / "latest.json"
 
 
-def load_benchmark() -> dict:
-    return json.loads(_BENCH_PATH.read_text(encoding="utf-8"))
+def load_benchmark() -> dict[str, Any]:
+    data: dict[str, Any] = json.loads(_BENCH_PATH.read_text(encoding="utf-8"))
+    return data
 
 
-async def run() -> dict:
+async def run() -> dict[str, Any]:
     settings = get_settings()
     configure_logging(settings.log_level)
     services = await Services.create(settings)
     bench = load_benchmark()
 
-    per_question: list[dict] = []
+    per_question: list[dict[str, Any]] = []
     try:
         for question in bench["questions"]:
             answer = await services.ask.ask(question)
@@ -47,7 +49,7 @@ async def run() -> dict:
 
     report = {
         "benchmark": bench["name"],
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "model": settings.effective_synthesis_model,
         "n_questions": len(per_question),
         "aggregate": aggregate([q["scores"] for q in per_question]),

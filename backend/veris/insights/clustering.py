@@ -42,7 +42,7 @@ def cluster_vectors(vectors: np.ndarray, k: int | None = None) -> np.ndarray:
         return np.zeros(n, dtype=int)
     k = k or choose_k(n)
     model = KMeans(n_clusters=k, n_init=10, random_state=42)
-    return model.fit_predict(vectors)
+    return np.asarray(model.fit_predict(vectors))
 
 
 def representative_titles(
@@ -76,7 +76,9 @@ async def label_clusters(
                 json_schema=_LABEL_SCHEMA,
             )
             data = json.loads(result.text)
-            return cid, (str(data.get("label", "")).strip(), str(data.get("description", "")).strip())
+            label = str(data.get("label", "")).strip()
+            description = str(data.get("description", "")).strip()
+            return cid, (label, description)
         except Exception:
             # LLM unavailable (no key, no credit, outage) or bad JSON —
             # the map must still render; category fallback fills the label.
