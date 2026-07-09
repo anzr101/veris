@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from typing import Any
 from urllib.parse import quote_plus
 
 from veris.config import Settings
@@ -137,7 +138,7 @@ class PositionService:
 
 
 def _collaborators(nearest: list[ScoredPaper], *, limit: int = 8) -> list[Collaborator]:
-    agg: dict[str, dict] = {}
+    agg: dict[str, dict[str, Any]] = {}
     for paper in nearest:
         for name in paper.authors:
             key = name.strip()

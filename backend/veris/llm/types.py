@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class ModelTier(str, Enum):
+class ModelTier(StrEnum):
     """Cost tier. The router maps a tier to a concrete model id.
 
     UTILITY  → cheap, high-volume calls (query planning, claim extraction, classification).

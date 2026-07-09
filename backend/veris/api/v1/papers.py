@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from veris.api.deps import get_services
 from veris.api.schemas import IngestRequest, StatsResponse
+from veris.api.security import INGEST_LIMIT, limiter
 from veris.api.state import Services
 from veris.domain.models import Paper
 from veris.ingestion.service import DEFAULT_CATEGORIES
@@ -42,8 +43,9 @@ async def get_paper(arxiv_id: str, services: Services = Depends(get_services)) -
 
 
 @router.post("/ingest")
+@limiter.limit(INGEST_LIMIT)
 async def ingest(
-    req: IngestRequest, services: Services = Depends(get_services)
+    request: Request, req: IngestRequest, services: Services = Depends(get_services)
 ) -> dict[str, int]:
     categories = tuple(req.categories) if req.categories else DEFAULT_CATEGORIES
     stats = await services.ingestion.ingest(

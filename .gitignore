@@ -32,9 +32,9 @@ data/
 models/cache/
 .fastembed_cache/
 
-# Generated artifacts (precomputed per-corpus)
+# Generated artifacts (precomputed per-corpus). The eval report is committed on
+# purpose: it's the shipped baseline served by /v1/evals on ephemeral containers.
 backend/veris/insights/results/
-backend/veris/evals/results/
 
 # OS / editor
 .DS_Store

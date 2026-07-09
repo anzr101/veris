@@ -9,8 +9,8 @@ copilot that positions *your* research inside it.** Ask a question and get an an
 every claim is traceable to a real paper and independently verified for entailment. Paste an
 idea and see how novel it is, who works nearby, and where the open gaps are.
 
-`FastAPI` · `pgvector` · `hybrid retrieval (RRF)` · `Claude (Sonnet + Haiku, cost-tiered)` ·
-`scikit-learn` · `Next.js` · `Canvas/Framer Motion` · `Docker` · `GitHub Actions`
+`FastAPI` · `LangGraph` · `pgvector` · `hybrid retrieval (RRF)` · `Claude (Sonnet + Haiku, cost-tiered)` ·
+`guardrails` · `LangSmith` · `scikit-learn` · `Next.js` · `Canvas/Framer Motion` · `Docker` · `GitHub Actions`
 
 </div>
 
@@ -50,7 +50,7 @@ detection and an open eval dashboard.
                                           │
                 Postgres + pgvector (dense)  +  FTS / BM25 (sparse)   ── shared embeddings ──┐
                                           │                                                  │
- question ─► plan(Haiku) ─► hybrid retrieve (dense+sparse+RRF) ─► synthesize(Sonnet) ─► verify │
+ question ─► [LangGraph] plan(Haiku) ─► hybrid retrieve (dense+sparse+RRF) ─► synthesize(Sonnet) ─► verify │
                                           │                          + cite + contradictions │
  idea ─────► embed ─► nearest work + novelty + collaborators + gaps + grounded related-work  │
                                                                                              │
@@ -74,12 +74,18 @@ product — including the map and position pipelines — runs and tests **with n
 | **Model-aware Claude adapter** | Current Claude models reject `temperature`/`budget_tokens` and uses adaptive thinking + `effort`; Haiku supports neither. The adapter gates params per model so the first real Opus call doesn't 400. |
 | **Public-data-only collaborators** | Author names + their public papers + a public-profile search link. No email/contact scraping — a deliberate ethics line. |
 | **Per-call cost tracing + CI evals** | Every LLM call logs model/tokens/latency/USD; prompt/retrieval changes are gated on a measured faithfulness delta. |
+| **LangGraph orchestration** | The ask pipeline is a `StateGraph` (plan → retrieve → synthesize → verify) with a conditional verify edge; nodes emit UI events via the custom stream writer, so one graph serves both SSE streaming and the sync path. |
+| **Deterministic guardrails around the LLM** | An input guard sanitizes text and blocks prompt-injection patterns before any model call; an output guard strips citation markers that don't map to retrieved evidence. Cheap, auditable, and testable — the LLM verifier sits on top. |
+| **Rate-limited, hardened API** | Per-IP limits on the LLM-backed endpoints (slowapi), security headers on every response, strict request length caps. |
 
 ## Tech stack
 
 | Layer | Choice |
 |---|---|
 | Backend | FastAPI (async), hexagonal architecture, Pydantic v2 |
+| Orchestration | **LangGraph** state machine for the ask pipeline; **LangSmith** tracing (env-gated) |
+| Safety | Input/output **guardrails** (prompt-injection screen, citation-bounds check) · independent claim verifier |
+| Security | **slowapi** per-IP rate limiting · security headers · strict input validation |
 | Data | Postgres + **pgvector** (prod) · SQLite + **FTS5** (dev) |
 | Retrieval | Dense + sparse fused with **RRF** + pluggable rerank |
 | Insights | scikit-learn (KMeans/PCA), optional UMAP; semantic + co-authorship graph |

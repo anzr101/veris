@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import asyncio
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 
 from veris import __version__
+from veris.api.security import limiter, security_headers_middleware
 from veris.config import get_settings
 from veris.core.logging import configure_logging, get_logger
+from veris.guardrails import GuardrailViolation
 from veris.llm.errors import LLMUnavailableError
 
 
@@ -60,6 +63,21 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Security: per-IP rate limiting + hardening headers on every response.
+    app.state.limiter = limiter
+    app.middleware("http")(security_headers_middleware)
+
+    @app.exception_handler(RateLimitExceeded)
+    async def rate_limited(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": f"Rate limit exceeded: {exc.detail}. Try again shortly."},
+        )
+
+    @app.exception_handler(GuardrailViolation)
+    async def guardrail_violation(request: Request, exc: GuardrailViolation) -> JSONResponse:
+        return JSONResponse(status_code=422, content={"detail": exc.reason})
 
     @app.exception_handler(LLMUnavailableError)
     async def llm_unavailable(request: Request, exc: LLMUnavailableError) -> JSONResponse:

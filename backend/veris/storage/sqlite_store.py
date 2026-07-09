@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from typing import Any
 
 import aiosqlite
 import numpy as np
@@ -227,7 +228,7 @@ class SqliteStore:
         async with self._conn.execute(sql) as cur:
             rows = await cur.fetchall()
 
-        grouped: dict[int, dict] = {}
+        grouped: dict[int, dict[str, Any]] = {}
         for row in rows:
             pid = int(row["paper_id"])
             entry = grouped.setdefault(
@@ -300,7 +301,7 @@ class SqliteStore:
         )
 
 
-def _to_paper_vector(paper_id: int, entry: dict) -> PaperVector:
+def _to_paper_vector(paper_id: int, entry: dict[str, Any]) -> PaperVector:
     matrix = np.stack(entry["vectors"])
     mean = matrix.mean(axis=0)
     norm = float(np.linalg.norm(mean))

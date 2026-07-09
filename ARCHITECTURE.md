@@ -54,6 +54,18 @@ btree on `papers.arxiv_id` (unique) and `papers.published_at`.
 
 ## The grounding pipeline (the moat)
 
+The pipeline is orchestrated as a **LangGraph state machine** (`veris/pipeline/graph.py`):
+`plan → retrieve → synthesize → verify`, with a conditional edge that skips verification
+when nothing was retrieved. Nodes wrap the existing services and publish UI events through
+LangGraph's custom stream writer, so the same compiled graph powers both the SSE streaming
+endpoint and the synchronous path used by the eval harness. Each node is LangSmith-traceable
+(env-gated — set `LANGSMITH_TRACING` + `LANGSMITH_API_KEY`).
+
+Around the graph sit two deterministic **guardrails** (`veris/guardrails/`): an input guard
+that sanitizes user text and rejects prompt-injection patterns before any LLM call (HTTP 422
+with an explainable reason), and an output guard that strips citation markers not backed by
+a retrieved passage and computes the grounded-claim share used as the faithfulness score.
+
 Given a question, the request flows:
 
 1. **Query planning** *(Haiku 4.5)* — decompose the question into sub-queries and extract
@@ -80,7 +92,19 @@ Output: markdown answer + a structured `citations` map + a `verification` report
 
 Every LLM call is wrapped by a `Tracer` that records model, prompt/response token counts,
 latency, and computed USD cost, tagged by request id and pipeline stage. This feeds both
-the cost report and debugging of faithfulness regressions.
+the cost report and debugging of faithfulness regressions. With LangSmith enabled, every
+graph node (plan/retrieve/synthesize/verify) additionally lands as a traced run with
+timings, giving per-stage visibility across requests.
+
+## API security
+
+- **Rate limiting** (slowapi, per-IP token buckets keyed on the first `X-Forwarded-For`
+  hop): tight limits on the LLM-backed endpoints (`/ask` 10/min, `/position` 6/min,
+  `/ingest` 3/min), a generous default elsewhere.
+- **Security headers** on every response (`X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, `Cache-Control`).
+- **Input validation**: strict Pydantic length caps plus the guardrail screen described
+  above; control characters are stripped before text reaches a prompt.
 
 ## Why these choices signal production thinking
 

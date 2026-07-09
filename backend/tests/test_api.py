@@ -19,10 +19,10 @@ os.environ.update(
     }
 )
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from veris.config import get_settings  # noqa: E402
-from veris.main import app  # noqa: E402
+from veris.config import get_settings
+from veris.main import app
 
 
 def test_api_surface():
@@ -51,7 +51,9 @@ def test_api_surface():
 
         pos = client.post(
             "/v1/position",
-            json={"text": "A method for retrieval-augmented generation that reduces hallucination."},
+            json={
+                "text": "A method for retrieval-augmented generation that reduces hallucination."
+            },
         )
         assert pos.status_code == 200
         assert "novelty_score" in pos.json() and "collaborators" in pos.json()

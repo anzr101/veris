@@ -22,7 +22,7 @@ class Paper(BaseModel):
     published_at: datetime | None = None
     updated_at: datetime | None = None
     pdf_url: str | None = None
-    raw_meta: dict = Field(default_factory=dict)
+    raw_meta: dict[str, object] = Field(default_factory=dict)
 
 
 class Chunk(BaseModel):

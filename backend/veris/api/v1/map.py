@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends
 
 from veris.api.deps import get_services
@@ -13,7 +15,7 @@ router = APIRouter()
 
 
 @router.get("/map")
-async def get_map(services: Services = Depends(get_services)) -> dict:
+async def get_map(services: Services = Depends(get_services)) -> dict[str, Any]:
     """Serve the map artifact, building it lazily if absent.
 
     The artifact is a file, and container filesystems are ephemeral — after a
@@ -22,13 +24,19 @@ async def get_map(services: Services = Depends(get_services)) -> dict:
     model label calls) and every later request reads the file.
     """
     artifact = load_map()
-    if artifact is None and await services.store.count_papers() > 0:
-        artifact = await build_map(
+    # Rebuild when absent, and also when a previously saved artifact is empty but the
+    # corpus isn't — that happens when the map was built mid-seeding (papers ingested,
+    # chunks not embedded yet) and would otherwise be served stale forever.
+    stale_empty = artifact is not None and artifact.n_papers == 0
+    if (artifact is None or stale_empty) and await services.store.count_papers() > 0:
+        rebuilt = await build_map(
             services.store,
             router_from(services),
             embedding_model=services.settings.embedding_model,
         )
-        save_map(artifact)
+        if rebuilt.n_papers > 0 or artifact is None:
+            save_map(rebuilt)
+            artifact = rebuilt
     if artifact is None:
         return {
             "built_at": None,
@@ -42,7 +50,7 @@ async def get_map(services: Services = Depends(get_services)) -> dict:
 
 
 @router.post("/map/build")
-async def build(services: Services = Depends(get_services)) -> dict:
+async def build(services: Services = Depends(get_services)) -> dict[str, int]:
     """Rebuild the map from the current corpus and persist it."""
     artifact = await build_map(
         services.store, router_from(services), embedding_model=services.settings.embedding_model

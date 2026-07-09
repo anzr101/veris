@@ -19,9 +19,9 @@ os.environ.update(
     }
 )
 
-from veris.config import get_settings  # noqa: E402
-from veris.domain.models import ChunkInput, Paper  # noqa: E402
-from veris.ingestion.chunker import chunk_paper  # noqa: E402
+from veris.config import get_settings
+from veris.domain.models import ChunkInput, Paper
+from veris.ingestion.chunker import chunk_paper
 
 _PAPERS = [
     Paper(

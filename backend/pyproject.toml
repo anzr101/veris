@@ -20,6 +20,9 @@ dependencies = [
     "sse-starlette>=2.1",
     "structlog>=24.4",
     "tenacity>=9.0",
+    "langgraph>=0.4",
+    "langsmith>=0.3",
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]
@@ -44,6 +47,10 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "RUF"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's DI idiom: Depends/Query in argument defaults is the framework contract.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 
 [tool.mypy]
 python_version = "3.11"

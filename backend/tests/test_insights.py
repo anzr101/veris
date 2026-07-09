@@ -16,21 +16,21 @@ os.environ.update(
 )
 os.environ.pop("ANTHROPIC_API_KEY", None)
 
-import numpy as np  # noqa: E402
-import pytest  # noqa: E402
+import numpy as np
+import pytest
 
-from veris.config import Settings  # noqa: E402
-from veris.domain.models import ChunkInput, Paper  # noqa: E402
-from veris.embeddings.hashing import HashingEmbedder  # noqa: E402
-from veris.ingestion.chunker import chunk_paper  # noqa: E402
-from veris.insights.clustering import choose_k  # noqa: E402
-from veris.insights.graph import coauthor_edges, semantic_edges  # noqa: E402
-from veris.insights.map_builder import build_map  # noqa: E402
-from veris.insights.position import PositionService  # noqa: E402
-from veris.insights.projection import project_2d  # noqa: E402
-from veris.llm.router import LLMRouter  # noqa: E402
-from veris.llm.stub_provider import StubProvider  # noqa: E402
-from veris.storage.sqlite_store import SqliteStore  # noqa: E402
+from veris.config import Settings
+from veris.domain.models import ChunkInput, Paper
+from veris.embeddings.hashing import HashingEmbedder
+from veris.ingestion.chunker import chunk_paper
+from veris.insights.clustering import choose_k
+from veris.insights.graph import coauthor_edges, semantic_edges
+from veris.insights.map_builder import build_map
+from veris.insights.position import PositionService
+from veris.insights.projection import project_2d
+from veris.llm.router import LLMRouter
+from veris.llm.stub_provider import StubProvider
+from veris.storage.sqlite_store import SqliteStore
 
 _PAPERS = [
     Paper(arxiv_id="1", title="Multi-Agent Reinforcement Learning with Transformers",
@@ -40,16 +40,16 @@ _PAPERS = [
           abstract="Agents learn cooperative navigation with policy gradient methods and rewards.",
           authors=["Alice Smith"], categories=["cs.LG", "cs.MA"]),
     Paper(arxiv_id="3", title="Retrieval-Augmented Generation for QA",
-          abstract="Retrieval augmented generation combines retriever and generator to reduce hallucination.",
+          abstract="Retrieval augmented generation combines retriever and generator to cut errors.",
           authors=["Carol Lee"], categories=["cs.CL"]),
     Paper(arxiv_id="4", title="Dense Retrieval for Open-Domain Question Answering",
-          abstract="Dense retrieval embeds passages and queries for open domain question answering.",
+          abstract="Dense retrieval embeds passages and queries for open domain QA.",
           authors=["Carol Lee", "Dan Park"], categories=["cs.CL", "cs.IR"]),
     Paper(arxiv_id="5", title="Diffusion Models for Image Synthesis",
           abstract="Diffusion models generate images from noise using iterative denoising steps.",
           authors=["Eve Kim"], categories=["cs.CV"]),
     Paper(arxiv_id="6", title="Classifier-Free Guidance in Diffusion",
-          abstract="Classifier free guidance improves prompt fidelity in diffusion image generation.",
+          abstract="Classifier free guidance improves prompt fidelity in diffusion imaging.",
           authors=["Eve Kim", "Frank Wu"], categories=["cs.CV"]),
 ]
 
@@ -106,7 +106,9 @@ async def test_fetch_paper_vectors_one_per_paper(store):
 
 
 async def test_build_map_artifact(store):
-    router = LLMRouter(StubProvider(), synthesis_model="claude-opus-4-8", utility_model="claude-haiku-4-5")
+    router = LLMRouter(
+        StubProvider(), synthesis_model="claude-opus-4-8", utility_model="claude-haiku-4-5"
+    )
     artifact = await build_map(store, router, embedding_model="hashing")
     assert artifact.n_papers == 6
     assert len(artifact.nodes) == 6
