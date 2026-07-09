@@ -13,6 +13,9 @@ os.environ.update(
         # Explicit empty beats any .env file (popping does not — pydantic
         # settings would still read the key from ../.env and hit the real API)
         "ANTHROPIC_API_KEY": "",
+        "HF_TOKEN": "",
+        "VERIS_LLM_PROVIDER": "auto",
+        "VERIS_SEED_TOPICS": "",
     }
 )
 

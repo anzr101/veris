@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     arxiv_api_url: str = "https://export.arxiv.org/api/query"
     ingest_batch_size: int = 50
 
+    # Boot seeding. Comma-separated ingest topics run in the background at startup
+    # when the corpus is empty — free-tier containers lose the SQLite file on every
+    # restart, so this keeps a deployed demo self-healing. Empty = disabled.
+    seed_topics: str = ""
+    seed_max_per_topic: int = 20
+
     @property
     def active_llm_provider(self) -> Literal["anthropic", "hf", "stub"]:
         """Resolve ``auto`` to the adapter the factory will actually build."""

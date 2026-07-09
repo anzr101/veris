@@ -15,8 +15,9 @@ from veris.llm.types import ModelTier
 
 
 def _settings(**overrides) -> Settings:
-    # anthropic_api_key / hf_token are aliased fields — set them by alias.
-    base = {"ANTHROPIC_API_KEY": "", "HF_TOKEN": ""}
+    # Pin every provider-selection input so a developer's .env can't leak into the
+    # assertions. anthropic_api_key / hf_token are aliased fields — set by alias.
+    base = {"llm_provider": "auto", "ANTHROPIC_API_KEY": "", "HF_TOKEN": ""}
     base.update(overrides)
     return Settings(**base)
 

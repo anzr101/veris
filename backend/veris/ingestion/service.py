@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 
 from veris.core.logging import get_logger
@@ -50,7 +51,12 @@ class IngestionService:
         for paper in papers:
             paper_id = await self._store.upsert_paper(paper)
             chunks = chunk_paper(paper)
-            vectors = self._embedder.embed_documents([c.text for c in chunks])
+            # ONNX embedding is CPU-bound and can run for minutes on a large batch;
+            # keep it off the event loop so /health stays responsive — a blocked
+            # health check gets the container killed on Render.
+            vectors = await asyncio.to_thread(
+                self._embedder.embed_documents, [c.text for c in chunks]
+            )
             chunk_inputs = [
                 ChunkInput(
                     ordinal=i,

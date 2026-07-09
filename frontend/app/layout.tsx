@@ -3,7 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
-  title: "Fractor AI · Research answers you can verify",
+  title: "Veris · Research answers you can verify",
   description:
     "A citation-grounded research engine over arXiv. Navigate the research landscape, position your work, and trust every claim.",
 };
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <footer className="border-t border-white/[0.06] py-8 text-center">
             <p className="font-mono text-xs text-mist">
-              Fractor AI · grounded synthesis over arXiv · built with FastAPI, pgvector & Claude
+              Veris · grounded synthesis over arXiv · built with FastAPI, pgvector & Claude
             </p>
           </footer>
         </div>
