@@ -62,8 +62,8 @@ class PositionService:
     def _router(self, tracer: Tracer) -> LLMRouter:
         return LLMRouter(
             self._provider,
-            synthesis_model=self._settings.synthesis_model,
-            utility_model=self._settings.utility_model,
+            synthesis_model=self._settings.effective_synthesis_model,
+            utility_model=self._settings.effective_utility_model,
             tracer=tracer,
         )
 

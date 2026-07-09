@@ -13,6 +13,8 @@ import json
 from collections.abc import AsyncIterator
 from typing import Any
 
+from veris.llm.errors import LLMUnavailableError
+
 # Families that accept output_config.effort and adaptive thinking.
 _EFFORT_THINKING_PREFIXES = ("claude-opus-4-", "claude-sonnet-4-6", "claude-fable-")
 
@@ -78,7 +80,14 @@ class AnthropicProvider:
             effort=effort,
             thinking=thinking,
         )
-        resp = await self._client.messages.create(**kwargs)
+        from anthropic import APIError
+
+        try:
+            resp = await self._client.messages.create(**kwargs)
+        except APIError as e:
+            # Auth failures, exhausted credits, rate limits — surface as a typed
+            # unavailability so the API can 503 instead of 500.
+            raise LLMUnavailableError("anthropic", str(e)) from e
         text = "".join(b.text for b in resp.content if b.type == "text")
         return text, resp.usage.input_tokens, resp.usage.output_tokens
 
@@ -119,6 +128,11 @@ class AnthropicProvider:
             effort=None,
             thinking=thinking,
         )
-        async with self._client.messages.stream(**kwargs) as stream:
-            async for text in stream.text_stream:
-                yield text
+        from anthropic import APIError
+
+        try:
+            async with self._client.messages.stream(**kwargs) as stream:
+                async for text in stream.text_stream:
+                    yield text
+        except APIError as e:
+            raise LLMUnavailableError("anthropic", str(e)) from e

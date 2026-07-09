@@ -48,7 +48,7 @@ async def run() -> dict:
     report = {
         "benchmark": bench["name"],
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "model": settings.synthesis_model,
+        "model": settings.effective_synthesis_model,
         "n_questions": len(per_question),
         "aggregate": aggregate([q["scores"] for q in per_question]),
         "questions": per_question,

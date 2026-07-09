@@ -5,12 +5,14 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from veris import __version__
 from veris.config import get_settings
 from veris.core.logging import configure_logging, get_logger
+from veris.llm.errors import LLMUnavailableError
 
 
 @asynccontextmanager
@@ -48,6 +50,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.exception_handler(LLMUnavailableError)
+    async def llm_unavailable(request: Request, exc: LLMUnavailableError) -> JSONResponse:
+        # Auth/credit/rate-limit failures at the provider are an upstream outage,
+        # not a server bug — tell the client what actually happened.
+        return JSONResponse(
+            status_code=503,
+            content={"detail": f"LLM provider unavailable ({exc.provider}): {exc.detail}"},
+        )
 
     @app.get("/health", tags=["meta"])
     async def health() -> dict[str, str]:
