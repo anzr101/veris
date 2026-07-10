@@ -19,6 +19,11 @@ RUN pip install --upgrade pip && pip install .
 
 COPY veris ./veris
 
+# Pre-embedded starter corpus (papers + chunks + vectors + FTS). Free-tier disks are
+# ephemeral and arXiv rate-limits shared egress IPs, so booting from a bundled corpus
+# beats re-ingesting on every cold start; live ingestion can still add to it.
+COPY seed_corpus.db ./veris.db
+
 # Non-root runtime user.
 RUN useradd --create-home --uid 10001 veris && chown -R veris:veris /app
 USER veris

@@ -6,6 +6,7 @@ the cached artifact.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections import Counter
 from datetime import UTC, datetime
@@ -36,8 +37,10 @@ async def build_map(store: Store, router: LLMRouter, *, embedding_model: str = "
         return MapArtifact(built_at=built_at, embedding_model=embedding_model, n_papers=0)
 
     vectors = np.array([p.vector for p in pvs], dtype=np.float32)
-    coords = project_2d(vectors)
-    labels = cluster_vectors(vectors)
+    # Projection/clustering are CPU-bound (t-SNE can run minutes on a small container);
+    # keep them off the event loop so /health stays responsive during a build.
+    coords = await asyncio.to_thread(project_2d, vectors)
+    labels = await asyncio.to_thread(cluster_vectors, vectors)
     titles = [p.title for p in pvs]
 
     reps = representative_titles(vectors, labels, titles)
