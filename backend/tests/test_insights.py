@@ -19,14 +19,12 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 import numpy as np
 import pytest
 
-from veris.config import Settings
 from veris.domain.models import ChunkInput, Paper
 from veris.embeddings.hashing import HashingEmbedder
 from veris.ingestion.chunker import chunk_paper
 from veris.insights.clustering import choose_k
 from veris.insights.graph import coauthor_edges, semantic_edges
 from veris.insights.map_builder import build_map
-from veris.insights.position import PositionService
 from veris.insights.projection import project_2d
 from veris.llm.router import LLMRouter
 from veris.llm.stub_provider import StubProvider
@@ -118,19 +116,3 @@ async def test_build_map_artifact(store):
     # Coordinates are within the scaled box.
     assert all(0 <= n.x <= 100 and 0 <= n.y <= 100 for n in artifact.nodes)
     assert artifact.edges  # at least semantic edges
-
-
-async def test_position_report(store):
-    svc = PositionService(StubProvider(), store, HashingEmbedder(), Settings())
-    report = await svc.position(
-        "A transformer policy for multi-agent reinforcement learning that improves sample "
-        "efficiency on cooperative navigation tasks."
-    )
-    assert report.nearest, "expected nearest prior work"
-    assert 0.0 <= report.novelty_score <= 1.0
-    assert 0.0 <= report.density <= 1.0
-    # Collaborators are aggregated from public author metadata on the nearest papers.
-    assert report.collaborators
-    assert all(c.profile_url.startswith("https://scholar.google.com") for c in report.collaborators)
-    assert report.related_work_markdown
-    assert report.citations

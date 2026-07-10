@@ -9,10 +9,6 @@ class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=500)
 
 
-class PositionRequest(BaseModel):
-    text: str = Field(min_length=20, max_length=4000)
-
-
 class IngestRequest(BaseModel):
     terms: str | None = None
     categories: list[str] | None = None

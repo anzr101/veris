@@ -1,4 +1,4 @@
-import type { EvalReport, MapArtifact, Paper, PositionReport, Stats } from "./types";
+import type { MapArtifact, Paper, Stats } from "./types";
 
 // Calls are proxied through Next's /api rewrite to the FastAPI backend (see next.config.mjs),
 // so the browser stays same-origin and there's no CORS dance.
@@ -70,21 +70,5 @@ async function getJSON<T>(path: string): Promise<T> {
 }
 
 export const getStats = () => getJSON<Stats>("/v1/stats");
-
-/** Kick a fresh benchmark run on the backend (fire-and-forget; the page polls). */
-export async function postEvalsRun(): Promise<void> {
-  await fetch(`${BASE}/v1/evals/run`, { method: "POST" });
-}
 export const getPapers = (limit = 30) => getJSON<Paper[]>(`/v1/papers?limit=${limit}`);
-export const getEvals = () => getJSON<EvalReport>("/v1/evals");
 export const getMap = () => getJSON<MapArtifact>("/v1/map");
-
-export async function postPosition(text: string): Promise<PositionReport> {
-  const res = await fetch(`${BASE}/v1/position`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-  if (!res.ok) throw new Error(`position → ${res.status}`);
-  return res.json() as Promise<PositionReport>;
-}

@@ -14,7 +14,6 @@ from veris.embeddings.base import Embedder
 from veris.embeddings.factory import build_embedder
 from veris.ingestion.arxiv_client import ArxivClient
 from veris.ingestion.service import IngestionService
-from veris.insights.position import PositionService
 from veris.llm.base import LLMProvider
 from veris.llm.factory import build_provider
 from veris.retrieval.retriever import HybridRetriever
@@ -31,7 +30,6 @@ class Services:
     provider: LLMProvider
     retriever: HybridRetriever
     ask: AskService
-    position: PositionService
     ingestion: IngestionService
 
     @classmethod
@@ -42,7 +40,6 @@ class Services:
         provider = build_provider(settings)
         retriever = HybridRetriever(store, embedder, settings)
         ask = AskService(provider, retriever, settings)
-        position = PositionService(provider, store, embedder, settings)
         ingestion = IngestionService(ArxivClient(settings.arxiv_api_url), embedder, store)
         return cls(
             settings=settings,
@@ -51,7 +48,6 @@ class Services:
             provider=provider,
             retriever=retriever,
             ask=ask,
-            position=position,
             ingestion=ingestion,
         )
 

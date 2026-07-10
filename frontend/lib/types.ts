@@ -38,60 +38,12 @@ export interface Paper {
   pdf_url?: string | null;
 }
 
-export interface PaperRef {
-  arxiv_id: string;
-  title: string;
-}
-
-export interface ScoredPaper {
-  arxiv_id: string;
-  title: string;
-  authors: string[];
-  categories: string[];
-  year: number | null;
-  score: number;
-  url: string;
-}
-
-export interface Collaborator {
-  name: string;
-  affiliation: string | null;
-  paper_count: number;
-  sample_papers: PaperRef[];
-  profile_url: string;
-}
-
-export interface PositionReport {
-  input: string;
-  novelty_score: number;
-  density: number;
-  crowded_count: number;
-  nearest: ScoredPaper[];
-  collaborators: Collaborator[];
-  gaps: string[];
-  related_work_markdown: string;
-  citations: Citation[];
-  claims: ClaimVerification[];
-  model: string;
-  cost_usd: number;
-  latency_ms: number;
-}
-
 export interface Stats {
   papers: number;
   chunks: number;
   embedding_model: string;
   synthesis_model: string;
   utility_model: string;
-}
-
-export interface EvalReport {
-  benchmark: string;
-  generated_at: string | null;
-  model?: string;
-  aggregate: Record<string, number>;
-  questions: { question: string; scores: Record<string, number> }[];
-  note?: string;
 }
 
 export interface MapNode {

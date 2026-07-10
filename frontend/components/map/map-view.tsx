@@ -13,7 +13,7 @@ export function MapView({ artifact, focusArxiv }: { artifact: MapArtifact; focus
     [artifact.nodes],
   );
 
-  // When arriving from "Position → show on map", highlight that neighborhood.
+  // When arriving from Ask's "show sources on map", highlight that neighborhood.
   const highlight = useMemo(() => {
     if (!focusArxiv || focusArxiv.length === 0) return null;
     const ids = new Set(focusArxiv);

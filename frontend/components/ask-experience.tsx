@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Compass, Map as MapIcon, RotateCcw, TriangleAlert } from "lucide-react";
+import { Map as MapIcon, RotateCcw, TriangleAlert } from "lucide-react";
 import { askStream } from "@/lib/api";
 import type {
   AskState,
@@ -106,9 +106,6 @@ export function AskExperience() {
               >
                 <Link href="/map" className="chip">
                   <MapIcon className="h-3.5 w-3.5 text-signal" /> Explore the map of science
-                </Link>
-                <Link href="/position" className="chip">
-                  <Compass className="h-3.5 w-3.5 text-signal" /> Position your research
                 </Link>
               </motion.div>
             </div>

@@ -12,17 +12,18 @@ This document describes the system design, the data model, and — most importan
    another model, or pgvector for another store, touches one adapter.
 3. **Cost is a first-class design input.** Every LLM call is routed by a tier policy and
    traced (tokens, latency, cost). Cheap models do the high-volume work.
-4. **Everything is measured.** No retrieval or prompt change ships without an eval delta.
+4. **Small surface, no dead weight.** Two user-facing pillars (Ask, Map) and only the
+   services that power them.
 
 ## Component view
 
 ```
               ┌──────────────────────────── API (FastAPI, async) ────────────────────────────┐
-              │  POST /v1/ask  (SSE stream)   GET /v1/papers   GET /v1/evals   /health        │
+              │  POST /v1/ask  (SSE stream)   GET /v1/papers   GET /v1/map   /health          │
               └───────────────────────────────────┬──────────────────────────────────────────┘
                                                    │
           ┌────────────────────────────── Application services ──────────────────────────────┐
-          │  AskService  ·  IngestionService  ·  EvalService                                  │
+          │  AskService  ·  IngestionService  ·  Map builder                                  │
           └───┬───────────────┬────────────────┬──────────────────┬───────────────┬──────────┘
               │               │                │                  │               │
         QueryPlanner     Retriever         Synthesizer        Grounder        Tracer
@@ -58,7 +59,7 @@ The pipeline is orchestrated as a **LangGraph state machine** (`veris/pipeline/g
 `plan → retrieve → synthesize → verify`, with a conditional edge that skips verification
 when nothing was retrieved. Nodes wrap the existing services and publish UI events through
 LangGraph's custom stream writer, so the same compiled graph powers both the SSE streaming
-endpoint and the synchronous path used by the eval harness. Each node is LangSmith-traceable
+endpoint and the synchronous path. Each node is LangSmith-traceable
 (env-gated — set `LANGSMITH_TRACING` + `LANGSMITH_API_KEY`).
 
 Around the graph sit two deterministic **guardrails** (`veris/guardrails/`): an input guard
@@ -99,8 +100,8 @@ timings, giving per-stage visibility across requests.
 ## API security
 
 - **Rate limiting** (slowapi, per-IP token buckets keyed on the first `X-Forwarded-For`
-  hop): tight limits on the LLM-backed endpoints (`/ask` 10/min, `/position` 6/min,
-  `/ingest` 3/min), a generous default elsewhere.
+  hop): tight limits on the LLM-backed endpoints (`/ask` 10/min, `/ingest` 3/min), a
+  generous default elsewhere.
 - **Security headers** on every response (`X-Content-Type-Options`, `X-Frame-Options`,
   `Referrer-Policy`, `Cache-Control`).
 - **Input validation**: strict Pydantic length caps plus the guardrail screen described
@@ -113,4 +114,5 @@ timings, giving per-stage visibility across requests.
 - **Separate embeddings table** — re-embedding is an operational reality, not a rewrite.
 - **Local ONNX embeddings** — no GPU, no per-call embedding bill, deployable anywhere.
 - **Independent verifier** — the model that writes the answer is not trusted to grade it.
-- **Evals in CI** — prompt/retrieval changes are gated on a measured faithfulness delta.
+- **Deterministic offline tests** — stub LLM + hashing embedder + in-memory SQLite exercise
+  every pipeline end to end in CI, no API key required.
