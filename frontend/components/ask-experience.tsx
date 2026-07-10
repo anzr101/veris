@@ -142,17 +142,28 @@ export function AskExperience() {
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
               {/* Answer column */}
               <div className="min-w-0">
-                {state.error ? (
+                {state.error && !state.answer ? (
                   <div className="flex items-start gap-3 rounded-2xl border border-rose/30 bg-rose/[0.05] p-5">
                     <TriangleAlert className="mt-0.5 h-5 w-5 flex-none text-rose" />
                     <p className="text-[14px] leading-relaxed text-bone/90">{state.error}</p>
                   </div>
                 ) : state.answer ? (
-                  <AnswerView
-                    markdown={state.answer}
-                    citations={state.citations}
-                    streaming={state.stage === "synthesizing"}
-                  />
+                  <>
+                    <AnswerView
+                      markdown={state.answer}
+                      citations={state.citations}
+                      streaming={state.stage === "synthesizing"}
+                    />
+                    {/* A late-stage provider hiccup (e.g. verification) must not bury
+                        the answer the user already has. */}
+                    {state.error && (
+                      <p className="mt-5 flex items-start gap-2 rounded-xl border border-amber/25 bg-amber/[0.05] p-3 text-[12.5px] leading-snug text-mist">
+                        <TriangleAlert className="mt-0.5 h-3.5 w-3.5 flex-none text-amber" />
+                        Verification was cut short by the free-tier provider quota — the
+                        answer and citations above are unaffected.
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <SkeletonAnswer />
                 )}
