@@ -47,7 +47,7 @@ export function AskExperience() {
         ...prev,
         stage: "done",
         error:
-          "Couldn't reach the Veris backend. Start it with `make up` (or `uvicorn veris.main:app`) and ensure a corpus is ingested.",
+          "Couldn't reach the Veris backend — it may be waking from a cold start. Try again in ~30 seconds.",
       }));
     }
   }, []);

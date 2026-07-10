@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { getEvals } from "@/lib/api";
+import { Loader2, RotateCcw } from "lucide-react";
+import { getEvals, postEvalsRun } from "@/lib/api";
 import type { EvalReport } from "@/lib/types";
 import { BackendNotice } from "@/components/backend-notice";
 import { PageHeader } from "@/components/page-header";
@@ -14,16 +15,50 @@ const LABELS: Record<string, string> = {
   grounded_claim_rate: "Grounded claims",
 };
 
+const POLL_MS = 15_000;
+
 export default function EvalsPage() {
   const [report, setReport] = useState<EvalReport | null>(null);
   const [error, setError] = useState(false);
+  const [rerunning, setRerunning] = useState(false);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    getEvals().then(setReport).catch(() => setError(true));
+  const hasRun = !!report && report.questions.length > 0;
+
+  // The backend self-runs the benchmark on first request after boot; keep polling
+  // until the report lands, then stop.
+  const refresh = useCallback(() => {
+    getEvals()
+      .then((r) => {
+        setReport(r);
+        setError(false);
+        if (r.questions.length > 0 && timer.current) {
+          clearInterval(timer.current);
+          timer.current = null;
+        }
+      })
+      .catch(() => setError(true));
   }, []);
 
+  useEffect(() => {
+    refresh();
+    timer.current = setInterval(refresh, POLL_MS);
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [refresh]);
+
+  const rerun = async () => {
+    setRerunning(true);
+    try {
+      await postEvalsRun();
+      if (!timer.current) timer.current = setInterval(refresh, POLL_MS);
+    } finally {
+      setTimeout(() => setRerunning(false), 3000);
+    }
+  };
+
   const agg = report?.aggregate ?? {};
-  const hasRun = report && report.questions.length > 0;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-20">
@@ -39,24 +74,45 @@ export default function EvalsPage() {
         <>
           <div className="mb-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
             {RATE_KEYS.map((k) => (
-              <MetricRing key={k} label={LABELS[k]} value={agg[k] ?? 0} hasRun={!!hasRun} />
+              <MetricRing key={k} label={LABELS[k]} value={agg[k] ?? 0} hasRun={hasRun} />
             ))}
           </div>
 
           {!hasRun ? (
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 text-[14px] text-mist">
-              No eval run yet. Run{" "}
-              <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-signal">
-                python -m veris.evals.harness
-              </code>{" "}
-              to populate this dashboard.
+            <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 text-[14px] text-mist">
+              <Loader2 className="mt-0.5 h-4 w-4 flex-none animate-spin text-signal/70" />
+              <div>
+                <p className="text-bone/90">
+                  {report?.note ??
+                    "The benchmark runs automatically against the live pipeline — results appear here in a few minutes."}
+                </p>
+                <p className="mt-1 text-[12.5px]">
+                  5 research questions × plan → retrieve → synthesize → verify, scored for
+                  grounding. This page refreshes itself.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02]">
               <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3 font-mono text-[11px] text-mist">
                 <span>{report?.benchmark}</span>
-                <span>{report?.model}</span>
+                <span className="flex items-center gap-4">
+                  {report?.model}
+                  <button
+                    onClick={rerun}
+                    disabled={rerunning}
+                    className="inline-flex items-center gap-1 text-signal hover:underline disabled:opacity-50"
+                    title="Re-run the benchmark against the live pipeline"
+                  >
+                    <RotateCcw className="h-3 w-3" /> {rerunning ? "starting…" : "re-run"}
+                  </button>
+                </span>
               </div>
+              {report?.note && (
+                <p className="border-b border-white/[0.06] px-5 py-2.5 text-[12px] text-amber/80">
+                  {report.note}
+                </p>
+              )}
               <ul className="divide-y divide-white/[0.05]">
                 {report?.questions.map((q, i) => (
                   <li key={i} className="px-5 py-4">

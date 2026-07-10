@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <footer className="border-t border-white/[0.06] py-8 text-center">
             <p className="font-mono text-xs text-mist">
-              Veris · grounded synthesis over arXiv · built with FastAPI, pgvector & Claude
+              Veris · grounded synthesis over arXiv · FastAPI · LangGraph · open models
             </p>
           </footer>
         </div>

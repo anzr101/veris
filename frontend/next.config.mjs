@@ -9,7 +9,7 @@ const nextConfig = {
     const api =
       process.env.BACKEND_INTERNAL_URL ||
       (process.env.NODE_ENV === "production"
-        ? "https://veris-api-x9po.onrender.com"
+        ? "https://veris-api-tzpg.onrender.com"
         : "http://localhost:8000");
     return [{ source: "/api/:path*", destination: `${api}/:path*` }];
   },

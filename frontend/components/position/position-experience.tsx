@@ -110,7 +110,8 @@ export function PositionExperience() {
         <div className="flex items-start gap-3 rounded-2xl border border-rose/30 bg-rose/[0.05] p-5">
           <TriangleAlert className="mt-0.5 h-5 w-5 flex-none text-rose" />
           <p className="text-[14px] leading-relaxed text-bone/90">
-            Couldn&apos;t reach the backend. Start it and ingest a corpus, then try again.
+            Couldn&apos;t reach the backend — it may be waking from a cold start. Try again in
+            ~30 seconds.
           </p>
         </div>
       )}
