@@ -43,11 +43,11 @@ export default function ExplorePage() {
       {loading && !error && <p className="font-mono text-sm text-mist">Loading corpus…</p>}
       {!loading && !error && papers.length === 0 && (
         <p className="text-mist">
-          No papers yet. Ingest some with{" "}
+          No papers yet — the corpus loads at startup and can be extended via{" "}
           <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-signal">
-            python -m veris.ingest
+            POST /v1/ingest
           </code>
-          .
+          . Refresh shortly.
         </p>
       )}
 

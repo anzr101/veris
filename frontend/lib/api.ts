@@ -70,6 +70,11 @@ async function getJSON<T>(path: string): Promise<T> {
 }
 
 export const getStats = () => getJSON<Stats>("/v1/stats");
+
+/** Kick a fresh benchmark run on the backend (fire-and-forget; the page polls). */
+export async function postEvalsRun(): Promise<void> {
+  await fetch(`${BASE}/v1/evals/run`, { method: "POST" });
+}
 export const getPapers = (limit = 30) => getJSON<Paper[]>(`/v1/papers?limit=${limit}`);
 export const getEvals = () => getJSON<EvalReport>("/v1/evals");
 export const getMap = () => getJSON<MapArtifact>("/v1/map");

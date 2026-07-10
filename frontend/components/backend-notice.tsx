@@ -7,17 +7,10 @@ export function BackendNotice() {
       <div className="text-[14px] leading-relaxed text-bone/90">
         <p className="font-medium">Backend not reachable.</p>
         <p className="mt-1 text-mist">
-          Start the API with{" "}
+          The API may be waking from a cold start on its free-tier host — give it up to a
+          minute and refresh. Running locally? Start it with{" "}
           <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-signal">
             make up
-          </code>{" "}
-          or{" "}
-          <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-signal">
-            uvicorn veris.main:app
-          </code>
-          , then ingest a corpus with{" "}
-          <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-signal">
-            python -m veris.ingest
           </code>
           .
         </p>

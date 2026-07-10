@@ -41,14 +41,12 @@ export default function MapPage() {
       <div className="mx-auto max-w-2xl px-5 py-16">
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">
           <div className="kicker mb-2">The map of science</div>
-          <h1 className="font-display text-2xl">No map built yet</h1>
+          <h1 className="font-display text-2xl">The map is being drawn</h1>
           <p className="mt-3 text-[15px] leading-relaxed text-mist">
-            Ingest a corpus, then build the map:
+            The corpus is being projected and clustered in the background — this takes a
+            minute or two after a fresh start. Refresh shortly, or explore the other tabs
+            meanwhile.
           </p>
-          <pre className="mt-4 overflow-x-auto rounded-xl bg-black/40 p-4 font-mono text-[12.5px] text-signal">
-{`python -m veris.ingest "your topic" --max 200
-python -m veris.buildmap`}
-          </pre>
         </div>
       </div>
     );
