@@ -55,7 +55,6 @@ async def _with_retry(fn: Callable[..., Awaitable[_T]], /, *args: Any) -> _T:
 
 class AskGraphState(TypedDict, total=False):
     question: str
-    verify: bool  # skip the verification stage when False (e.g. quick evals)
     plan: QueryPlan
     chunks: list[ScoredChunk]
     citations: list[Citation]
@@ -145,10 +144,8 @@ def build_ask_graph(
         }
 
     def should_verify(state: AskGraphState) -> str:
-        # Nothing retrieved → nothing to verify against; and callers may opt out.
-        if state.get("verify", True) and state.get("chunks"):
-            return "verify"
-        return END
+        # Nothing retrieved → nothing to verify against.
+        return "verify" if state.get("chunks") else END
 
     graph = StateGraph(AskGraphState)
     graph.add_node("plan", plan_node)

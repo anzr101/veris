@@ -15,7 +15,6 @@ from slowapi import Limiter
 
 # Per-route limits, referenced by the endpoint decorators.
 ASK_LIMIT = "10/minute"
-POSITION_LIMIT = "6/minute"
 INGEST_LIMIT = "3/minute"
 
 

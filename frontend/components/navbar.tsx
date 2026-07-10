@@ -8,9 +8,7 @@ import { Logo } from "./logo";
 const LINKS = [
   { href: "/", label: "Ask" },
   { href: "/map", label: "Map" },
-  { href: "/position", label: "Position" },
   { href: "/explore", label: "Explore" },
-  { href: "/evals", label: "Evals" },
 ];
 
 export function Navbar() {

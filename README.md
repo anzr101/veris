@@ -2,12 +2,11 @@
 
 # Veris
 
-### Navigate the research landscape. Position your work. Trust every claim.
+### Navigate the research landscape. Trust every claim.
 
-**Veris turns a corpus of arXiv papers into a living, explorable map of a field — and a
-copilot that positions *your* research inside it.** Ask a question and get an answer where
-every claim is traceable to a real paper and independently verified for entailment. Paste an
-idea and see how novel it is, who works nearby, and where the open gaps are.
+**Veris turns a corpus of arXiv papers into a living, explorable map of a field.** Ask a
+question and get an answer where every claim is traceable to a real paper and independently
+verified for entailment.
 
 `FastAPI` · `LangGraph` · `pgvector` · `hybrid retrieval (RRF)` · `Claude (Sonnet + Haiku, cost-tiered)` ·
 `guardrails` · `LangSmith` · `scikit-learn` · `Next.js` · `Canvas/Framer Motion` · `Docker` · `GitHub Actions`
@@ -25,21 +24,16 @@ trust. Veris is built around two ideas almost no one ships:
    clustered, and rendered as an interactive map — topics as constellations, time as motion,
    density as crowded-vs-open frontier. It's the difference between *reading* a field and
    *seeing* it.
-2. **A copilot that positions your own work.** Paste an abstract → a novelty read, the
-   nearest prior work, adjacent researchers (from **public** author data — never contact
-   info), open gaps, and a grounded, verified related-work draft.
+2. **A faithfulness engine.** Span-level citations plus an **independent** verifier that
+   checks each claim is actually entailed by its evidence, with cross-paper contradiction
+   detection.
 
-Underneath both: a faithfulness engine — span-level citations + an **independent** verifier
-that checks each claim is actually entailed by its evidence, plus cross-paper contradiction
-detection and an open eval dashboard.
-
-## The three pillars
+## The two pillars
 
 | Pillar | What it does | Route |
 |---|---|---|
-| **Map of Science** | Explore the embedded corpus: clustered topics, a time-travel slider, semantic + co-authorship edges, ask-from-map highlighting. | `/map` |
-| **Position my research** | Paste an idea → novelty radar, nearest work, adjacent labs/authors, gaps, grounded related-work. | `/position` |
 | **Grounded Ask** | Ask a question → streamed answer, inline verifiable citations, claim verification, contradiction detection. | `/` |
+| **Map of Science** | Explore the embedded corpus: clustered topics, a time-travel slider, semantic + co-authorship edges, ask-from-map highlighting. | `/map` |
 
 ## How it works
 
@@ -52,15 +46,13 @@ detection and an open eval dashboard.
                                           │                                                  │
  question ─► [LangGraph] plan(Haiku) ─► hybrid retrieve (dense+sparse+RRF) ─► synthesize(Sonnet) ─► verify │
                                           │                          + cite + contradictions │
- idea ─────► embed ─► nearest work + novelty + collaborators + gaps + grounded related-work  │
-                                                                                             │
             project (UMAP/PCA) ─► cluster (KMeans) ─► label (Haiku) ─► Map of Science ───────┘
 ```
 
 **Cost-tiered models:** high-volume calls (query planning, claim verification, cluster
-labeling, gap-finding) run on **Claude Haiku 4.5**; final synthesis runs on **Claude Sonnet 5**
-4.8**. Everything sits behind a provider interface with a deterministic stub, so the entire
-product — including the map and position pipelines — runs and tests **with no API key**.
+labeling) run on the cheap utility tier; final synthesis runs on the strong tier. Everything
+sits behind a provider interface with a deterministic stub, so the entire product — including
+the map pipeline — runs and tests **with no API key**.
 
 ## Engineering decisions worth noting
 
@@ -72,8 +64,7 @@ product — including the map and position pipelines — runs and tests **with n
 | **UMAP with a NumPy-PCA fallback** | The map always builds, even without the heavy `umap-learn`/`numba` stack on Windows. |
 | **Local ONNX embeddings** (`fastembed`) | No GPU, no per-call embedding bill; a hashing embedder backs the tests offline. |
 | **Model-aware Claude adapter** | Current Claude models reject `temperature`/`budget_tokens` and uses adaptive thinking + `effort`; Haiku supports neither. The adapter gates params per model so the first real Opus call doesn't 400. |
-| **Public-data-only collaborators** | Author names + their public papers + a public-profile search link. No email/contact scraping — a deliberate ethics line. |
-| **Per-call cost tracing + CI evals** | Every LLM call logs model/tokens/latency/USD; prompt/retrieval changes are gated on a measured faithfulness delta. |
+| **Per-call cost tracing** | Every LLM call logs model/tokens/latency/USD, tagged by pipeline stage. |
 | **LangGraph orchestration** | The ask pipeline is a `StateGraph` (plan → retrieve → synthesize → verify) with a conditional verify edge; nodes emit UI events via the custom stream writer, so one graph serves both SSE streaming and the sync path. |
 | **Deterministic guardrails around the LLM** | An input guard sanitizes text and blocks prompt-injection patterns before any model call; an output guard strips citation markers that don't map to retrieved evidence. Cheap, auditable, and testable — the LLM verifier sits on top. |
 | **Rate-limited, hardened API** | Per-IP limits on the LLM-backed endpoints (slowapi), security headers on every response, strict request length caps. |
@@ -99,18 +90,19 @@ product — including the map and position pipelines — runs and tests **with n
 ```
 veris/
 ├── backend/veris/
-│   ├── domain/        Pydantic models (Paper, Answer, MapArtifact, PositionReport, …)
+│   ├── domain/        Pydantic models (Paper, Answer, MapArtifact, …)
 │   ├── storage/       Store port + SQLite & Postgres adapters
 │   ├── embeddings/    Embedder port + fastembed & hashing adapters
-│   ├── llm/           Provider port, Claude adapter, stub, cost-tiered router, tracing
+│   ├── llm/           Provider port, adapters, stub, cost-tiered router, tracing
 │   ├── ingestion/     arXiv client, chunker, ingestion service
 │   ├── retrieval/     RRF fusion, reranker, hybrid retriever
+│   ├── pipeline/      the LangGraph ask state machine
 │   ├── synthesis/     planner, synthesizer, AskService (streaming)
 │   ├── grounding/     claim verifier + contradictions
-│   ├── insights/      projection, clustering, map builder, position service, graph
-│   ├── evals/         metrics, benchmark, harness
-│   └── api/           FastAPI app, services container, v1 routers
-├── frontend/          Next.js — Ask · Map · Position · Explore · Evals
+│   ├── guardrails/    input screen + citation-bounds output check
+│   ├── insights/      projection, clustering, map builder, co-author graph
+│   └── api/           FastAPI app, services container, security, v1 routers
+├── frontend/          Next.js — Ask · Map · Explore
 ├── docker-compose.yml db · api · web
 └── ARCHITECTURE.md    system design + the grounding pipeline
 ```
@@ -148,15 +140,14 @@ map, ingest a few hundred papers with the default `bge` embedder.
 |---|---|---|
 | `POST` | `/v1/ask` | Grounded answer via **SSE** (`plan → citations → token… → verification → contradictions → done`) |
 | `POST` | `/v1/ask/sync` | Non-streaming verified answer |
-| `POST` | `/v1/position` | Position a research idea (novelty, nearest, collaborators, gaps, related-work) |
 | `GET`  | `/v1/map` · `POST /v1/map/build` | Serve / rebuild the Map of Science |
-| `GET`  | `/v1/papers` · `/v1/stats` · `/v1/evals` | Corpus, stats, eval report |
+| `GET`  | `/v1/papers` · `/v1/stats` | Corpus and stats |
 
 ## Tests
 
 ```bash
-cd backend && pytest -q          # 21 tests — data layer, RRF, LLM router, pipeline, map, position, API
-cd frontend && npm run build     # typecheck + production build (8 routes)
+cd backend && pytest -q          # data layer, RRF, LLM router, guardrails, pipeline, map, API
+cd frontend && npm run build     # typecheck + production build
 ```
 
 The backend suite runs fully offline (stub LLM, in-memory SQLite, hashing embedder) and

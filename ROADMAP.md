@@ -19,8 +19,10 @@ End-to-end grounded answering, runnable on a laptop with zero infrastructure.
 
 - [x] Claim decomposition + entailment verification (independent of the synthesizer)
 - [x] Contradiction / consensus detection across retrieved papers
-- [x] Eval harness (faithfulness / citation-coverage / grounded-claim rate)
-- [x] Public faithfulness dashboard (**/evals**)
+- [x] LangGraph pipeline + guardrails + rate limiting
+
+> Position-my-research and the evals dashboard were built and later removed on purpose —
+> the product is deliberately two pillars (Ask + Map) with no extra surface to maintain.
 
 ## Phase 3 — The wow
 

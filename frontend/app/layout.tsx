@@ -5,7 +5,7 @@ import { Navbar } from "@/components/navbar";
 export const metadata: Metadata = {
   title: "Veris · Research answers you can verify",
   description:
-    "A citation-grounded research engine over arXiv. Navigate the research landscape, position your work, and trust every claim.",
+    "A citation-grounded research engine over arXiv. Ask a question, explore the map of the field, and trust every claim.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

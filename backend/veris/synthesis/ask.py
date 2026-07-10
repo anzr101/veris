@@ -42,12 +42,12 @@ class AskService:
             tracer=tracer,
         )
 
-    async def ask(self, question: str, *, verify: bool = True) -> Answer:
+    async def ask(self, question: str) -> Answer:
         start = time.perf_counter()
         tracer = Tracer()
         graph = build_ask_graph(self._router(tracer), self._retriever)
 
-        state = await graph.ainvoke({"question": question, "verify": verify})
+        state = await graph.ainvoke({"question": question})
 
         return Answer(
             question=question,
@@ -68,9 +68,7 @@ class AskService:
         graph = build_ask_graph(self._router(tracer), self._retriever)
 
         # Nodes publish UI events through LangGraph's custom stream writer; relay them.
-        async for event in graph.astream(
-            {"question": question, "verify": True}, stream_mode="custom"
-        ):
+        async for event in graph.astream({"question": question}, stream_mode="custom"):
             yield event
 
         yield {

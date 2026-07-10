@@ -14,7 +14,7 @@ export default function MapPage() {
 
   useEffect(() => {
     getMap().then(setArtifact).catch(() => setError(true));
-    // Read ?ids=arxiv1,arxiv2 (set by "Position → show on map") without useSearchParams,
+    // Read ?ids=arxiv1,arxiv2 (set by Ask's "show sources on map") without useSearchParams,
     // so the page stays a simple static client component.
     const ids = new URLSearchParams(window.location.search).get("ids");
     if (ids) setFocusArxiv(ids.split(",").filter(Boolean));
