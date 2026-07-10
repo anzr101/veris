@@ -38,11 +38,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         seed_task = asyncio.create_task(seed_if_empty(app.state.services, settings))
 
+    # Prebuild the map when the corpus is already populated (bundled starter corpus)
+    # but the artifact file was lost with the ephemeral disk.
+    from veris.api.v1.map import rebuild_map_background
+    from veris.insights.map_builder import load_map
+
+    map_task: asyncio.Task[None] | None = None
+    if load_map() is None and await app.state.services.store.count_papers() > 0:
+        map_task = asyncio.create_task(rebuild_map_background(app.state.services))
+
     try:
         yield
     finally:
-        if seed_task is not None and not seed_task.done():
-            seed_task.cancel()
+        for task in (seed_task, map_task):
+            if task is not None and not task.done():
+                task.cancel()
         await app.state.services.close()
         log.info("veris.shutdown")
 

@@ -29,6 +29,8 @@ out/
 data/
 *.sqlite3
 *.db
+# ...except the pre-embedded starter corpus bundled into the Docker image.
+!backend/seed_corpus.db
 models/cache/
 .fastembed_cache/
 
