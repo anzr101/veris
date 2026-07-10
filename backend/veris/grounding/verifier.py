@@ -80,6 +80,20 @@ _CONTRADICTION_SYSTEM = (
 )
 
 
+# Verification reads evidence, it doesn't write prose — truncated passages carry enough
+# signal for entailment checks at roughly half the tokens, which matters on providers
+# with tokens-per-minute quotas.
+_VERIFY_SNIPPET_CHARS = 400
+
+
+def _compact(chunks: list[ScoredChunk]) -> list[ScoredChunk]:
+    return [
+        c if len(c.text) <= _VERIFY_SNIPPET_CHARS
+        else c.model_copy(update={"text": c.text[:_VERIFY_SNIPPET_CHARS].rstrip() + "…"})
+        for c in chunks
+    ]
+
+
 class Grounder:
     def __init__(self, router: LLMRouter) -> None:
         self._router = router
@@ -87,7 +101,7 @@ class Grounder:
     async def verify(
         self, answer_markdown: str, chunks: list[ScoredChunk]
     ) -> list[ClaimVerification]:
-        passages = format_passages(chunks)
+        passages = format_passages(_compact(chunks))
         prompt = (
             f"Answer to verify:\n{answer_markdown}\n\n"
             f"Evidence passages:\n{passages}\n\n"
@@ -106,7 +120,7 @@ class Grounder:
     async def find_contradictions(
         self, chunks: list[ScoredChunk]
     ) -> list[Contradiction]:
-        passages = format_passages(chunks)
+        passages = format_passages(_compact(chunks))
         result = await self._router.complete(
             ModelTier.UTILITY,
             prompt=f"Passages:\n{passages}\n\nIdentify genuine contradictions.",

@@ -1,0 +1,16 @@
+# Free-tier Render spins the API down after ~15 idle minutes, and the next visitor
+# pays a ~40s cold start. A ping every 10 minutes keeps it warm during the day.
+# NOTE: scheduled workflows only run from the default branch — this activates on merge.
+name: Keep API warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: curl -fsS --max-time 90 https://veris-api-tzpg.onrender.com/health

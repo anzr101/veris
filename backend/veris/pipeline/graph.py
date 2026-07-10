@@ -15,21 +15,42 @@ the decorator is inert.
 
 from __future__ import annotations
 
-from typing import TypedDict
+import asyncio
+from collections.abc import Awaitable, Callable
+from typing import Any, TypedDict, TypeVar
 
 from langgraph.config import get_stream_writer
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langsmith import traceable
 
+from veris.core.logging import get_logger
 from veris.domain.answer import Citation, ClaimVerification, Contradiction, QueryPlan
 from veris.domain.models import RetrievalFilters, ScoredChunk
 from veris.grounding.verifier import Grounder
 from veris.guardrails.output_guard import grounded_share, strip_unbacked_citations
+from veris.llm.errors import LLMUnavailableError
 from veris.llm.router import LLMRouter
 from veris.retrieval.retriever import HybridRetriever
 from veris.synthesis.planner import QueryPlanner
 from veris.synthesis.synthesizer import Synthesizer, build_citations
+
+_log = get_logger("veris.pipeline")
+
+# Provider tokens-per-minute quotas recover within a minute; one spaced retry is
+# usually enough to clear them.
+_VERIFY_RETRY_DELAY_S = 20
+
+
+_T = TypeVar("_T")
+
+
+async def _with_retry(fn: Callable[..., Awaitable[_T]], /, *args: Any) -> _T:
+    try:
+        return await fn(*args)
+    except LLMUnavailableError:
+        await asyncio.sleep(_VERIFY_RETRY_DELAY_S)
+        return await fn(*args)
 
 
 class AskGraphState(TypedDict, total=False):
@@ -54,7 +75,13 @@ def build_ask_graph(
 
     @traceable(name="plan", run_type="chain")
     async def plan_node(state: AskGraphState) -> AskGraphState:
-        plan = await planner.plan(state["question"])
+        # Planning is an optimization; if the utility model is briefly unavailable,
+        # retrieval on the raw question still yields a grounded answer.
+        try:
+            plan = await planner.plan(state["question"])
+        except LLMUnavailableError as e:
+            _log.warning("plan.fallback_raw_question", detail=e.detail)
+            plan = QueryPlan(sub_queries=[state["question"]], intent="synthesis")
         get_stream_writer()({"type": "plan", "data": plan.model_dump(mode="json")})
         return {"plan": plan}
 
@@ -84,8 +111,15 @@ def build_ask_graph(
 
     @traceable(name="verify", run_type="chain")
     async def verify_node(state: AskGraphState) -> AskGraphState:
+        # Verification enriches an answer that already exists — a provider outage here
+        # (typically a free-tier rate limit) must never destroy the streamed answer.
+        # Retry once after the quota window; if it still fails, skip verification.
         writer = get_stream_writer()
-        claims = await grounder.verify(state["markdown"], state["chunks"])
+        try:
+            claims = await _with_retry(grounder.verify, state["markdown"], state["chunks"])
+        except LLMUnavailableError as e:
+            _log.warning("verify.skipped", detail=e.detail)
+            return {}
         faithfulness = grounded_share(claims)
         writer(
             {
@@ -96,7 +130,11 @@ def build_ask_graph(
                 },
             }
         )
-        contradictions = await grounder.find_contradictions(state["chunks"])
+        try:
+            contradictions = await _with_retry(grounder.find_contradictions, state["chunks"])
+        except LLMUnavailableError as e:
+            _log.warning("contradictions.skipped", detail=e.detail)
+            contradictions = []
         writer(
             {"type": "contradictions", "data": [c.model_dump() for c in contradictions]}
         )
