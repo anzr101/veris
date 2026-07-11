@@ -1,18 +1,22 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Map as MapIcon, RotateCcw, TriangleAlert } from "lucide-react";
-import { askStream } from "@/lib/api";
+import { askStream, getStats } from "@/lib/api";
 import type {
   AskState,
   Citation,
   ClaimVerification,
   Contradiction,
   QueryPlan,
+  Stats,
 } from "@/lib/types";
+import { easeOutExpo } from "@/lib/motion";
 import { AskConsole } from "./ask-console";
+import { Constellation } from "./constellation";
+import { CountUp } from "./count-up";
 import { Pipeline } from "./pipeline";
 import { AnswerView } from "./answer-view";
 import { Sources } from "./sources";
@@ -21,10 +25,19 @@ import { Verification, Contradictions } from "./verification";
 
 const INITIAL: AskState = { stage: "idle", citations: [], answer: "", claims: [], contradictions: [] };
 
+// The headline reveals word by word; "verify" gets the gradient treatment.
+const HEADLINE_L1 = ["Research", "answers"];
+const HEADLINE_L2 = ["you", "can"];
+
 export function AskExperience() {
   const [state, setState] = useState<AskState>(INITIAL);
   const [question, setQuestion] = useState("");
+  const [stats, setStats] = useState<Stats | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    getStats().then(setStats).catch(() => {});
+  }, []);
 
   const run = useCallback(async (q: string) => {
     abortRef.current?.abort();
@@ -67,46 +80,88 @@ export function AskExperience() {
           <motion.section
             key="hero"
             exit={{ opacity: 0, y: -12 }}
-            className="relative flex min-h-[82vh] flex-col justify-center py-20"
+            className="relative flex min-h-[86vh] flex-col justify-center py-20"
           >
-            <div className="mx-auto w-full max-w-3xl">
+            {/* Star-map backdrop, faded out toward the edges. */}
+            <div className="absolute inset-0 [mask-image:radial-gradient(85%_75%_at_50%_38%,black,transparent)]">
+              <Constellation className="opacity-70" />
+            </div>
+
+            <div className="relative mx-auto w-full max-w-3xl">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: easeOutExpo }}
+                className="mb-9 flex items-center gap-4"
+              >
+                <span className="index-num">01</span>
+                <span className="h-px w-12 bg-white/15" />
+                <span className="kicker">Ask · grounded synthesis</span>
+              </motion.div>
+
+              <h1
+                className="font-display font-normal tracking-tight text-bone-bright"
+                style={{ fontSize: "clamp(2.6rem, 5.2vw, 4.4rem)", lineHeight: 1.04 }}
+              >
+                {HEADLINE_L1.map((w, i) => (
+                  <Word key={w} delay={0.08 + i * 0.07}>{w}</Word>
+                ))}
+                <br className="hidden sm:block" />
+                {HEADLINE_L2.map((w, i) => (
+                  <Word key={w} delay={0.22 + i * 0.07}>{w}</Word>
+                ))}
+                <Word delay={0.42}>
+                  <span className="bg-gradient-to-r from-signal via-[#F0DCAA] to-signal bg-clip-text italic text-transparent">
+                    verify
+                  </span>
+                  .
+                </Word>
+              </h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.6, ease: easeOutExpo }}
+                className="mt-6 max-w-xl text-[17px] leading-relaxed text-mist"
+              >
+                Every claim traceable to a span in a real paper, independently checked for
+                entailment, with cross-paper contradiction detection.
+              </motion.p>
+
               <motion.div
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: 0.6, duration: 0.6, ease: easeOutExpo }}
+                className="mt-10"
               >
-                <div className="mb-9 flex items-center gap-4">
-                  <span className="index-num">01</span>
-                  <span className="h-px w-12 bg-white/15" />
-                  <span className="kicker">Ask · grounded synthesis</span>
-                </div>
-                <h1
-                  className="font-display font-normal tracking-tight text-bone-bright"
-                  style={{ fontSize: "clamp(2.6rem, 5.2vw, 4.4rem)", lineHeight: 1.0 }}
-                >
-                  Research answers
-                  <br className="hidden sm:block" /> you can{" "}
-                  <span className="italic text-signal">verify</span>.
-                </h1>
-                <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-mist">
-                  Every claim traceable to a span in a real paper, independently checked for
-                  entailment, with cross-paper contradiction detection.
-                </p>
+                <AskConsole onSubmit={run} />
               </motion.div>
 
-              <div className="mt-10">
-                <AskConsole onSubmit={run} />
-              </div>
-
+              {/* Live corpus pulse — proof the atlas is real, counted up on arrival. */}
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="mt-9 flex flex-wrap items-center gap-3"
+                animate={{ opacity: stats ? 1 : 0 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-2 font-mono text-[12px] text-mist"
               >
-                <Link href="/map" className="chip">
-                  <MapIcon className="h-3.5 w-3.5 text-signal" /> Explore the map of science
-                </Link>
+                {stats && (
+                  <>
+                    <span className="flex items-center gap-2">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-signal/60 motion-reduce:animate-none" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-signal" />
+                      </span>
+                      <CountUp value={stats.papers} className="text-bone-bright" /> papers indexed
+                    </span>
+                    <span>
+                      <CountUp value={stats.chunks} className="text-bone-bright" /> evidence passages
+                    </span>
+                    <Link href="/map" className="group inline-flex items-center gap-1.5 text-signal/90 transition-colors hover:text-signal">
+                      <MapIcon className="h-3 w-3" /> explore the map
+                      <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </div>
           </motion.section>
@@ -122,14 +177,17 @@ export function AskExperience() {
                 <div className="kicker mb-1.5">Question</div>
                 <h2 className="font-display text-2xl leading-snug text-bone">{question}</h2>
               </div>
-              <button
+              <motion.button
                 onClick={reset}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className="chip flex-none"
                 title="Ask another question"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 New question
-              </button>
+              </motion.button>
             </div>
 
             <div className="mb-8">
@@ -166,7 +224,12 @@ export function AskExperience() {
                 )}
 
                 {state.stage === "done" && !state.error && (
-                  <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/[0.06] pt-4 font-mono text-[11px] text-mist">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/[0.06] pt-4 font-mono text-[11px] text-mist"
+                  >
                     {state.model && <span>model · {state.model}</span>}
                     {typeof state.cost_usd === "number" && (
                       <span>cost · ${state.cost_usd.toFixed(4)}</span>
@@ -182,16 +245,21 @@ export function AskExperience() {
                         <MapIcon className="h-3 w-3" /> show sources on map
                       </Link>
                     )}
-                  </div>
+                  </motion.div>
                 )}
               </div>
 
               {/* Insights rail */}
               <aside className="space-y-7">
                 {typeof state.faithfulness === "number" && (
-                  <div className="glass rounded-2xl p-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, ease: easeOutExpo }}
+                    className="glass rounded-2xl p-4"
+                  >
                     <FaithfulnessMeter value={state.faithfulness} />
-                  </div>
+                  </motion.div>
                 )}
                 <Sources citations={state.citations} />
                 <Verification claims={state.claims} />
@@ -202,6 +270,19 @@ export function AskExperience() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function Word({ children, delay }: { children: React.ReactNode; delay: number }) {
+  return (
+    <motion.span
+      initial={{ opacity: 0, y: 22, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.65, delay, ease: easeOutExpo }}
+      className="mr-[0.26em] inline-block"
+    >
+      {children}
+    </motion.span>
   );
 }
 
@@ -234,12 +315,12 @@ function reduce(prev: AskState, event: string, data: unknown): AskState {
 
 function SkeletonAnswer() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3.5">
       {[100, 96, 88, 92, 70].map((w, i) => (
         <div
           key={i}
-          className="h-4 animate-pulse rounded bg-gradient-to-r from-white/[0.03] via-white/[0.07] to-white/[0.03] bg-[length:200%_100%]"
-          style={{ width: `${w}%`, animationDelay: `${i * 0.08}s` }}
+          className="shimmer h-4 rounded-md"
+          style={{ width: `${w}%`, animationDelay: `${i * 0.12}s` }}
         />
       ))}
     </div>

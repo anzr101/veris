@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { motion } from "framer-motion";
 import { Logo } from "./logo";
 
 const LINKS = [
@@ -17,7 +18,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-ink/55 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="group flex items-center gap-3">
-          <Logo className="h-8 w-8" />
+          <Logo className="h-8 w-8 transition-transform duration-300 group-hover:rotate-[8deg]" />
           <span className="leading-none">
             <span className="block font-display text-[20px] tracking-tight text-bone-bright">
               Veris
@@ -40,7 +41,12 @@ export function Navbar() {
               >
                 {l.label}
                 {active && (
-                  <span className="absolute -bottom-px left-0 right-0 h-px bg-signal" />
+                  // Shared underline slides between links on navigation.
+                  <motion.span
+                    layoutId="nav-underline"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                    className="absolute -bottom-px left-0 right-0 h-px bg-signal"
+                  />
                 )}
               </Link>
             );
