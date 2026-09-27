@@ -3,189 +3,167 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Space Grotesk", ui-monospace, monospace;
+  color-scheme: light;
 }
 
 html {
-  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-paper font-sans text-ink antialiased;
+  font-feature-settings: "ss01" 1;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(196, 64, 28, 0.16);
 }
 
 @layer base {
   *:focus-visible {
-    outline: 2px solid rgba(216, 178, 106, 0.55);
+    outline: 1.5px solid #141413;
     outline-offset: 3px;
-    border-radius: 5px;
+    border-radius: 6px;
   }
-  a,
   button {
     -webkit-tap-highlight-color: transparent;
   }
 }
 
-body {
-  @apply bg-ink text-bone font-sans antialiased;
-  letter-spacing: -0.006em;
-  background-image:
-    radial-gradient(1100px 620px at 86% -12%, rgba(216, 178, 106, 0.07), transparent 60%),
-    radial-gradient(760px 560px at 2% 2%, rgba(155, 181, 154, 0.04), transparent 55%);
-  background-attachment: fixed;
+@layer components {
+  .label {
+    @apply font-mono text-[11px] uppercase tracking-label text-muted;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .hairline {
+    @apply border-line;
+  }
 }
 
-/* Crisp, aligned figures for data and labels in the unified typeface. */
-.font-mono {
-  font-feature-settings: "tnum" 1;
+/* Answer typography — a reading column, not a chat bubble. */
+.prose-answer {
+  @apply text-[16.5px] leading-[1.75] text-ink-soft;
 }
-
-/* Topographic contour — the cartographic signature, kept very faint. */
-body::before {
+.prose-answer > * + * {
+  @apply mt-4;
+}
+.prose-answer h1,
+.prose-answer h2,
+.prose-answer h3 {
+  @apply mt-8 font-serif text-[26px] font-normal leading-tight text-ink;
+}
+.prose-answer h3 {
+  @apply text-[22px];
+}
+.prose-answer strong {
+  @apply font-medium text-ink;
+}
+.prose-answer ul {
+  @apply list-none space-y-2 pl-0;
+}
+.prose-answer ul > li {
+  @apply relative pl-5;
+}
+.prose-answer ul > li::before {
   content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: repeating-radial-gradient(
-    circle at 84% 14%,
-    rgba(216, 178, 106, 0.045) 0 1px,
-    transparent 1px 72px
-  );
-  -webkit-mask-image: radial-gradient(110% 110% at 84% 8%, black, transparent 68%);
-  mask-image: radial-gradient(110% 110% at 84% 8%, black, transparent 68%);
+  @apply absolute left-0 top-[0.8em] h-px w-2.5 bg-faint;
+}
+.prose-answer ol {
+  @apply list-decimal space-y-2 pl-5 marker:font-mono marker:text-[13px] marker:text-muted;
+}
+.prose-answer a {
+  @apply underline decoration-line underline-offset-4 hover:decoration-ink;
+}
+.prose-answer code {
+  @apply rounded bg-paper-deep px-1 py-0.5 font-mono text-[14px] text-ink;
+}
+.prose-answer table {
+  @apply w-full border-collapse text-[14.5px];
+}
+.prose-answer th,
+.prose-answer td {
+  @apply border-b border-line px-2 py-2 text-left align-top;
+}
+.prose-answer th {
+  @apply font-medium text-ink;
 }
 
-/* Fine film grain so the dark surface never looks flat. */
-body::after {
+.streaming > :is(p, h1, h2, h3):last-child::after,
+.streaming > :is(ul, ol):last-child > li:last-child::after {
   content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  margin-left: 3px;
+  vertical-align: -0.15em;
+  background: #c4401c;
+  animation: blink 1s steps(2, start) infinite;
+}
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
 }
 
-::selection {
-  background: rgba(216, 178, 106, 0.26);
-  color: #fff;
+@keyframes sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #eceae4 0%, #e4e1da 50%, #eceae4 100%);
+  background-size: 200% 100%;
+  animation: sweep 1.6s ease-in-out infinite;
+}
+
+input[type="range"].timeline {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+input[type="range"].timeline::-webkit-slider-runnable-track {
+  height: 1px;
+  background: rgba(20, 20, 19, 0.18);
+}
+input[type="range"].timeline::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 13px;
+  width: 13px;
+  margin-top: -6px;
+  border-radius: 999px;
+  background: #141413;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 ::-webkit-scrollbar {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #24242b;
+  background: rgba(20, 20, 19, 0.14);
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #33333b;
+  background: rgba(20, 20, 19, 0.28);
   background-clip: content-box;
-}
-
-@layer components {
-  .glass {
-    @apply border border-white/[0.07] bg-ink-50/70 backdrop-blur-xl;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
-  }
-  .hairline {
-    @apply border border-white/[0.07];
-  }
-  .rule {
-    @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
-  }
-  .chip {
-    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02]
-           px-4 py-2 text-[13px] text-mist transition-all duration-300
-           hover:border-signal/40 hover:bg-white/[0.04] hover:text-bone-bright;
-  }
-  .panel {
-    @apply rounded-2xl border border-white/[0.06] bg-white/[0.012];
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
-  }
-  .panel-hover {
-    @apply transition-all duration-300 hover:-translate-y-0.5 hover:border-signal/20
-           hover:bg-white/[0.025];
-  }
-  .kicker {
-    @apply font-mono text-[10.5px] uppercase tracking-kicker text-faint;
-  }
-  .index-num {
-    @apply font-mono text-[11px] tracking-[0.2em] text-signal/70;
-  }
-  /* Editorial section header: index · rule · kicker */
-  .eyebrow {
-    @apply mb-7 flex items-center gap-4;
-  }
-}
-
-/* Markdown answer typography */
-.prose-veris {
-  @apply text-[15.5px] leading-[1.78] text-bone/90;
-}
-.prose-veris p {
-  @apply my-3.5;
-}
-.prose-veris h1,
-.prose-veris h2,
-.prose-veris h3 {
-  @apply mt-6 mb-2 font-display font-medium text-bone-bright;
-}
-.prose-veris h2 {
-  @apply text-xl;
-}
-.prose-veris h3 {
-  @apply text-lg;
-}
-.prose-veris ul {
-  @apply my-3 list-disc space-y-1.5 pl-5 marker:text-signal/50;
-}
-.prose-veris ol {
-  @apply my-3 list-decimal space-y-1.5 pl-5 marker:text-signal/50;
-}
-.prose-veris strong {
-  @apply font-semibold text-bone-bright;
-}
-.prose-veris a {
-  @apply text-signal underline decoration-signal/30 underline-offset-2;
-}
-.prose-veris code {
-  @apply rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[13px] text-signal;
-}
-
-.streaming-caret::after {
-  content: "▍";
-  @apply ml-0.5 animate-pulse text-signal;
-}
-
-/* Loading shimmer — a light band sweeping across a placeholder. */
-@keyframes shimmer {
-  from {
-    background-position: 200% 0;
-  }
-  to {
-    background-position: -200% 0;
-  }
-}
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.03) 25%,
-    rgba(255, 255, 255, 0.09) 50%,
-    rgba(255, 255, 255, 0.03) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.8s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .shimmer {
-    animation: none;
-  }
-  html {
-    scroll-behavior: auto;
-  }
 }

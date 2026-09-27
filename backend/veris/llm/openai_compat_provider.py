@@ -76,6 +76,14 @@ class OpenAICompatProvider:
         }
         if stream:
             payload["stream"] = True
+        # Groq enforces JSON mode server-side; other routed backends vary, so the
+        # prompt-embedded schema stays the portable fallback.
+        if json_schema is not None and "groq.com" in self._base_url:
+            payload["response_format"] = {"type": "json_object"}
+        # gpt-oss models reason before answering; reasoning tokens count against
+        # max_tokens, so keep it short or the visible answer can come back empty.
+        if "gpt-oss" in model:
+            payload["reasoning_effort"] = "low"
         return payload
 
     async def complete(

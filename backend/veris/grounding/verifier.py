@@ -112,7 +112,7 @@ class Grounder:
             prompt=prompt,
             system=_VERIFY_SYSTEM,
             stage="verify",
-            max_tokens=1500,
+            max_tokens=4000,
             json_schema=_CLAIMS_SCHEMA,
         )
         return _parse_claims(result.text)
@@ -126,7 +126,7 @@ class Grounder:
             prompt=f"Passages:\n{passages}\n\nIdentify genuine contradictions.",
             system=_CONTRADICTION_SYSTEM,
             stage="contradictions",
-            max_tokens=800,
+            max_tokens=2000,
             json_schema=_CONTRADICTION_SCHEMA,
         )
         return _parse_contradictions(result.text)

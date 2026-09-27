@@ -1,5 +1,5 @@
-import { AskExperience } from "@/components/ask-experience";
+import { AskView } from "@/components/ask/ask-view";
 
 export default function Home() {
-  return <AskExperience />;
+  return <AskView />;
 }

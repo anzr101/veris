@@ -1,35 +1,37 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Navbar } from "@/components/navbar";
+import { Nav } from "@/components/nav";
 
 export const metadata: Metadata = {
-  title: "Veris · Research answers you can verify",
-  description:
-    "A citation-grounded research engine over arXiv. Ask a question, explore the map of the field, and trust every claim.",
+  title: "Veris",
+  description: "Grounded answers from the research literature, with every claim verified.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#F4F3EF",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        {/* Loaded via the browser (not next/font) so a blocked Google Fonts request
-            degrades gracefully to the CSS fallback stack instead of blank-screening. */}
+        {/* Loaded by the browser rather than next/font so a blocked font request falls
+            back to the system stack instead of failing the build. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@300..600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
           rel="stylesheet"
+        />
+        <link
+          rel="icon"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23141413'/%3E%3Ccircle cx='23' cy='10' r='2.5' fill='%23C4401C'/%3E%3Cpath d='M9 10l6 13 4-9' fill='none' stroke='%23F4F3EF' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
         />
       </head>
       <body>
-        <div className="relative z-10 flex min-h-screen flex-col">
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <footer className="border-t border-white/[0.06] py-8 text-center">
-            <p className="font-mono text-xs text-mist">
-              Veris · grounded synthesis over arXiv · FastAPI · LangGraph · open models
-            </p>
-          </footer>
+        <div className="flex min-h-screen flex-col">
+          <Nav />
+          <main className="flex flex-1 flex-col">{children}</main>
         </div>
       </body>
     </html>

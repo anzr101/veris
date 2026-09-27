@@ -1,6 +1,5 @@
 """Corpus endpoints: stats, list papers, fetch one, trigger ingestion."""
 
-from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 

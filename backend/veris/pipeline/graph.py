@@ -119,6 +119,11 @@ def build_ask_graph(
         except LLMUnavailableError as e:
             _log.warning("verify.skipped", detail=e.detail)
             return {}
+        if not claims:
+            # An empty decomposition means the verifier failed to parse, not that the
+            # answer is perfectly grounded — report nothing rather than a false 100%.
+            _log.warning("verify.empty")
+            return {}
         faithfulness = grounded_share(claims)
         writer(
             {
