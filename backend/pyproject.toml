@@ -70,3 +70,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.vercel]
+# Serverless entrypoint: applies runtime defaults, then serves veris.main:app.
+entrypoint = "index:app"
