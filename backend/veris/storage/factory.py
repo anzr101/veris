@@ -52,9 +52,9 @@ def _writable(path: str) -> str:
     p = Path(path)
     if not p.is_absolute() and not p.exists() and (_BACKEND_ROOT / p).exists():
         p = _BACKEND_ROOT / p
-    if not p.exists() or os.access(p.parent, os.W_OK):
+    if os.access(p.parent, os.W_OK):
         return str(p)
     target = Path(tempfile.gettempdir()) / p.name
-    if not target.exists():
+    if p.exists() and not target.exists():
         shutil.copyfile(p, target)
     return str(target)
