@@ -15,7 +15,7 @@ RUN apt-get update \
 
 # Install dependencies first for better layer caching.
 COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install .
+RUN pip install --upgrade pip && pip install ".[map]"
 
 # Bake the ONNX embedding model into the image so a cold start never waits on a download.
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5')"

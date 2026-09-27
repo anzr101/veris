@@ -98,7 +98,13 @@ def save_map(artifact: MapArtifact) -> None:
     MAP_PATH.write_text(artifact.model_dump_json(), encoding="utf-8")
 
 
+# Precomputed map of the bundled seed corpus. Serverless deployments serve this rather
+# than rebuilding (projection + clustering is too heavy for a request-scoped runtime).
+BUNDLED_MAP_PATH = Path(__file__).parent / "seed_map.json"
+
+
 def load_map() -> MapArtifact | None:
-    if not MAP_PATH.exists():
-        return None
-    return MapArtifact.model_validate(json.loads(MAP_PATH.read_text(encoding="utf-8")))
+    for path in (MAP_PATH, BUNDLED_MAP_PATH):
+        if path.exists():
+            return MapArtifact.model_validate(json.loads(path.read_text(encoding="utf-8")))
+    return None

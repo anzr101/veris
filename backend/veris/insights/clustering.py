@@ -7,7 +7,6 @@ import json
 import math
 
 import numpy as np
-from sklearn.cluster import KMeans
 
 from veris.llm.router import LLMRouter
 from veris.llm.types import ModelTier
@@ -37,6 +36,8 @@ def choose_k(n: int) -> int:
 
 def cluster_vectors(vectors: np.ndarray, k: int | None = None) -> np.ndarray:
     """Return an (N,) array of integer cluster labels."""
+    from sklearn.cluster import KMeans  # heavy; only needed when (re)building the map
+
     n = vectors.shape[0]
     if n <= 2:
         return np.zeros(n, dtype=int)
