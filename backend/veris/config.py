@@ -22,6 +22,9 @@ class Settings(BaseSettings):
         env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore",
+        # Hosting dashboards happily create variables with blank values; a blank
+        # variable means "not set", so fall back to the default instead of failing.
+        env_ignore_empty=True,
     )
 
     # Application
