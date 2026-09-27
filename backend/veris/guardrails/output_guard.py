@@ -14,6 +14,13 @@ import re
 from veris.domain.answer import ClaimVerification
 
 _CITE_MARKER = re.compile(r"\[(\d{1,3})\]")
+# Some open-weight models emit browsing-style markers: 【3†L4-L6】 or [3†source].
+_ALT_MARKER = re.compile(r"[【\[](\d{1,3})†[^】\]]*[】\]]|【(\d{1,3})】")
+
+
+def normalize_citations(markdown: str) -> str:
+    """Rewrite alternative citation syntaxes to the canonical ``[n]`` form."""
+    return _ALT_MARKER.sub(lambda m: f"[{m.group(1) or m.group(2)}]", markdown)
 
 
 def strip_unbacked_citations(markdown: str, n_citations: int) -> str:
@@ -23,7 +30,7 @@ def strip_unbacked_citations(markdown: str, n_citations: int) -> str:
         idx = int(m.group(1))
         return m.group(0) if 1 <= idx <= n_citations else ""
 
-    return _CITE_MARKER.sub(_keep_or_drop, markdown)
+    return _CITE_MARKER.sub(_keep_or_drop, normalize_citations(markdown))
 
 
 def grounded_share(claims: list[ClaimVerification]) -> float:

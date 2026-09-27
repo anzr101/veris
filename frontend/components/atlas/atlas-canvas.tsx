@@ -22,8 +22,8 @@ export interface AtlasHandle {
 }
 
 const easeOut = (t: number) => 1 - Math.pow(1 - Math.min(Math.max(t, 0), 1), 3);
-const PAPER = "#F4F3EF";
-const INK = "#141413";
+const HALO = "#061129";
+const INK = "#FFFFFF";
 
 export const AtlasCanvas = forwardRef<AtlasHandle, Props>(function AtlasCanvas(props, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,7 +45,7 @@ export const AtlasCanvas = forwardRef<AtlasHandle, Props>(function AtlasCanvas(p
     const bw = b.x1 - b.x0 || 1;
     const bh = b.y1 - b.y0 || 1;
     // On wide screens the topic list occupies the left edge; centre the map beside it.
-    const inset = w >= 768 ? 290 + Math.max(20, (w - 1180) / 2 + 32) : 0;
+    const inset = w >= 768 ? 290 + Math.max(20, (w - 1240) / 2 + 32) : 0;
     const aw = w - inset;
     const s = Math.min((aw * 0.84) / bw, (h * 0.8) / bh);
     target.current = {
@@ -138,7 +138,7 @@ export const AtlasCanvas = forwardRef<AtlasHandle, Props>(function AtlasCanvas(p
         const b = p.nodes[e.target];
         if (!a || !b) continue;
         const on = !focusing || (emphasised(a) && emphasised(b));
-        ctx.strokeStyle = on ? "rgba(20,20,19,0.075)" : "rgba(20,20,19,0.025)";
+        ctx.strokeStyle = on ? "rgba(120,155,255,0.13)" : "rgba(120,155,255,0.035)";
         const pa = w2s(a.x, a.y);
         const pb = w2s(b.x, b.y);
         ctx.beginPath();
@@ -163,7 +163,7 @@ export const AtlasCanvas = forwardRef<AtlasHandle, Props>(function AtlasCanvas(p
         const pulse = p.highlight && on && !reduce ? 1 + 0.18 * Math.sin(now / 300) : 1;
         const r = (sel || hov ? r0 + 2 : r0) * prog * (p.highlight && on ? 1.35 * pulse : 1);
 
-        ctx.globalAlpha = (focusing && !on ? 0.14 : 0.9) * prog;
+        ctx.globalAlpha = (focusing && !on ? 0.12 : 0.95) * prog;
         ctx.fillStyle = topicColor(n.cluster);
         ctx.beginPath();
         ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
@@ -180,28 +180,30 @@ export const AtlasCanvas = forwardRef<AtlasHandle, Props>(function AtlasCanvas(p
       }
       ctx.globalAlpha = 1;
 
-      // Topic labels: set in italic serif like a printed atlas, largest topics first,
+      // Topic labels, largest topics first,
       // skipping any that would collide.
       const labelProg = reduce ? 1 : easeOut((now - born - 500) / 700);
       if (labelProg > 0) {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.font = `italic 400 ${Math.round(15 + Math.min(v.scale / 12, 4))}px "Instrument Serif", Georgia, serif`;
+        ctx.font = `500 ${Math.round(11 + Math.min(v.scale / 16, 3))}px "IBM Plex Sans", system-ui, sans-serif`;
+        (ctx as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing = "1px";
         const placed: { x: number; y: number; w: number }[] = [];
         for (const c of [...p.clusters].sort((a, b) => b.size - a.size)) {
           const s = w2s(c.x, c.y);
           if (s.x < 60 || s.x > w - 60 || s.y < 30 || s.y > h - 30) continue;
-          const tw = ctx.measureText(c.label).width;
+          const text = c.label.toUpperCase();
+          const tw = ctx.measureText(text).width;
           if (placed.some((d) => Math.abs(d.x - s.x) < (d.w + tw) / 2 + 12 && Math.abs(d.y - s.y) < 24)) continue;
           placed.push({ x: s.x, y: s.y, w: tw });
           const dim = p.topic !== null && p.topic !== c.id;
-          ctx.globalAlpha = labelProg * (dim ? 0.3 : 1);
+          ctx.globalAlpha = labelProg * (dim ? 0.25 : 0.92);
           ctx.lineJoin = "round";
           ctx.lineWidth = 5;
-          ctx.strokeStyle = PAPER;
-          ctx.strokeText(c.label, s.x, s.y);
+          ctx.strokeStyle = HALO;
+          ctx.strokeText(text, s.x, s.y);
           ctx.fillStyle = INK;
-          ctx.fillText(c.label, s.x, s.y);
+          ctx.fillText(text, s.x, s.y);
         }
         ctx.globalAlpha = 1;
       }

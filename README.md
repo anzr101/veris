@@ -8,7 +8,7 @@
 question and get an answer where every claim is traceable to a real paper and independently
 verified for entailment.
 
-`FastAPI` · `LangGraph` · `pgvector` · `hybrid retrieval (RRF)` · `Claude (Sonnet + Haiku, cost-tiered)` ·
+`FastAPI` · `LangGraph` · `pgvector` · `hybrid retrieval (RRF)` · `gpt-oss-120b / 20b on Groq (cost-tiered, provider-agnostic)` ·
 `guardrails` · `LangSmith` · `scikit-learn` · `Next.js` · `Canvas/Framer Motion` · `Docker` · `GitHub Actions`
 
 </div>
@@ -80,7 +80,7 @@ the map pipeline — runs and tests **with no API key**.
 | Data | Postgres + **pgvector** (prod) · SQLite + **FTS5** (dev) |
 | Retrieval | Dense + sparse fused with **RRF** + pluggable rerank |
 | Insights | scikit-learn (KMeans/PCA), optional UMAP; semantic + co-authorship graph |
-| LLM | Claude **Sonnet 5** / **Haiku 4.5**, cost-tiered, behind a provider port (+ stub) |
+| LLM | **gpt-oss-120b** (synthesis) / **gpt-oss-20b** (planning, verification) on Groq via an OpenAI-compatible adapter; Claude adapter and a stub behind the same port |
 | Embeddings | Local ONNX `fastembed` (bge-small) — no GPU |
 | Frontend | Next.js 14 · Tailwind · Framer Motion · a custom **Canvas 2D** WebGL-grade map |
 | Delivery | Docker + docker-compose · multi-stage · non-root · GitHub Actions CI |
@@ -133,6 +133,17 @@ map, ingest a few hundred papers with the default `bge` embedder.
 
 > Full production stack (Postgres + API + web) is one `make up` away once Docker
 > is available — the Dockerfiles and compose file are included.
+
+## Deploy (Vercel, two projects)
+
+| Project | Root directory | Environment |
+|---|---|---|
+| API | `backend` | `VERIS_ENV=production`, `VERIS_DATABASE_URL=sqlite+aiosqlite:///seed_corpus.db`, `VERIS_LLM_PROVIDER=hf`, `VERIS_LLM_BASE_URL=https://api.groq.com/openai/v1`, `VERIS_OSS_SYNTHESIS_MODEL=openai/gpt-oss-120b`, `VERIS_OSS_UTILITY_MODEL=openai/gpt-oss-20b`, `HF_TOKEN=<Groq API key>` |
+| Web | `frontend` | `BACKEND_INTERNAL_URL=<API deployment URL>` |
+
+The API boots from the bundled pre-embedded corpus and precomputed topic map, so the
+serverless function needs no database or build step. `backend/Dockerfile` runs the same
+service on any container host.
 
 ## API
 

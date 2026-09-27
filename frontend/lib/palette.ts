@@ -1,20 +1,21 @@
-// Muted, print-like topic colours for the paper background. Indexed by cluster id so a
-// topic keeps its colour everywhere it appears (atlas, legend, preview).
+// Topic colours chosen to read on both lab white and deep navy. Indexed by cluster id so
+// a topic keeps its colour everywhere it appears.
 const TOPIC_COLORS = [
-  "#C4401C", // vermilion
-  "#2F5D8A", // slate blue
-  "#5E7D3A", // moss
-  "#8A5A2B", // umber
-  "#6B4E8A", // plum
-  "#2E7A78", // teal
-  "#A3476B", // rose madder
-  "#B08415", // ochre
-  "#44546A", // graphite blue
-  "#7A6A4F", // khaki
-  "#3F7F5F", // viridian
-  "#8C3B3B", // oxblood
+  "#4D7DFF", // signal blue
+  "#1FB5C9", // cyan
+  "#12A879", // teal
+  "#E09A12", // amber
+  "#8D6BF2", // violet
+  "#F0645A", // coral
+  "#5A6FF0", // indigo
+  "#27B99A", // mint
+  "#D9468A", // magenta
+  "#7FB82E", // lime
+  "#2F95E8", // sky
+  "#EC7A1E", // orange
 ];
 
 export function topicColor(id: number): string {
-  return TOPIC_COLORS[((id % TOPIC_COLORS.length) + TOPIC_COLORS.length) % TOPIC_COLORS.length];
+  const n = TOPIC_COLORS.length;
+  return TOPIC_COLORS[((id % n) + n) % n];
 }

@@ -19,7 +19,12 @@ function citeify(
     return parts.map((part, pi) => {
       const m = part.match(marker);
       // Hug the mark to the preceding word, as in print ("returns³" not "returns ³").
-      if (!m) return marker.test(parts[pi + 1] ?? "") ? part.replace(/\s+$/, "") : part;
+      if (!m) {
+        let text = part;
+        if (marker.test(parts[pi + 1] ?? "")) text = text.replace(/\s+$/, "");
+        if (marker.test(parts[pi - 1] ?? "")) text = text.replace(/^\s+(?=[.,;:!?)])/, "");
+        return text;
+      }
       return m[1].split(/\s*[,;]\s*/).map((n, k) => {
         const idx = Number(n);
         return (
@@ -29,6 +34,9 @@ function citeify(
     });
   });
 }
+
+// Browsing-style markers some open models emit mid-stream: 【3†L4-L6】, [3†source], 【3】.
+const ALT_MARKER = /[【[](\d{1,3})†[^】\]]*[】\]]|【(\d{1,3})】/g;
 
 export function Answer({
   markdown,
@@ -56,7 +64,7 @@ export function Answer({
           td: ({ children }) => <td>{cite(children)}</td>,
         }}
       >
-        {markdown}
+        {markdown.replace(ALT_MARKER, (_, a, b) => `[${a ?? b}]`)}
       </ReactMarkdown>
     </div>
   );

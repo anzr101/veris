@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Nav } from "@/components/nav";
+import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-  title: "Veris",
+  title: { default: "Veris", template: "%s · Veris" },
   description: "Grounded answers from the research literature, with every claim verified.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F4F3EF",
+  themeColor: "#061129",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,18 +21,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@300..600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
           rel="stylesheet"
         />
         <link
           rel="icon"
-          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23141413'/%3E%3Ccircle cx='23' cy='10' r='2.5' fill='%23C4401C'/%3E%3Cpath d='M9 10l6 13 4-9' fill='none' stroke='%23F4F3EF' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='.5' y='.5' width='23' height='23' rx='5' fill='%230A1A3F'/%3E%3Ccircle cx='12' cy='12' r='5.2' fill='none' stroke='%23fff' stroke-width='1.6'/%3E%3Cpath d='M12 3.5v3.2M12 17.3v3.2M3.5 12h3.2M17.3 12h3.2' stroke='%23B7CAFF' stroke-width='1.3' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%234D7DFF'/%3E%3C/svg%3E"
         />
       </head>
       <body>
         <div className="flex min-h-screen flex-col">
           <Nav />
           <main className="flex flex-1 flex-col">{children}</main>
+          <Footer />
         </div>
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { ArrowUp, CornerDownLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const MAX = 500;
 
@@ -66,9 +66,9 @@ export function AskInput({
         submit();
       }}
       className={clsx(
-        "group relative flex items-end gap-3 border border-line bg-surface transition-[border-color,box-shadow] duration-200",
-        "focus-within:border-ink/25 focus-within:shadow-float",
-        lg ? "rounded-[20px] py-3 pl-6 pr-3 shadow-field" : "rounded-2xl py-2 pl-4 pr-2",
+        "group relative flex items-end gap-3 rounded-lg border bg-surface transition-[border-color,box-shadow] duration-200",
+        "border-line focus-within:border-blue/50 focus-within:shadow-glow",
+        lg ? "py-2.5 pl-5 pr-2.5 shadow-field" : "py-1.5 pl-4 pr-1.5",
       )}
     >
       <textarea
@@ -87,30 +87,21 @@ export function AskInput({
         aria-label="Research question"
         className={clsx(
           "flex-1 resize-none bg-transparent text-ink placeholder:text-faint focus:outline-none",
-          lg ? "py-2 text-[18px] leading-[1.5]" : "py-1.5 text-[15px] leading-[1.5]",
+          lg ? "py-2 text-[17px] leading-[1.5]" : "py-1.5 text-[15px] leading-[1.5]",
         )}
       />
-      <span
-        className={clsx(
-          "mb-2.5 hidden items-center gap-1 font-mono text-[11px] text-faint transition-opacity sm:flex",
-          lg && value.trim() ? "opacity-100" : "opacity-0",
-        )}
-      >
-        <CornerDownLeft className="h-3 w-3" />
-      </span>
       <button
         type="submit"
         disabled={!ready}
         aria-label="Ask"
         className={clsx(
-          "flex flex-none items-center justify-center rounded-full transition-all duration-200",
-          lg ? "h-11 w-11" : "h-9 w-9",
-          ready
-            ? "bg-ink text-paper hover:bg-accent active:scale-95"
-            : "bg-ink/[0.06] text-faint",
+          "flex flex-none items-center justify-center gap-2 rounded-md font-medium transition-all duration-200",
+          lg ? "h-11 px-4 text-[14px]" : "h-9 px-3 text-[13px]",
+          ready ? "bg-blue text-white hover:bg-[#1A43BA] active:scale-[0.97]" : "bg-paper-deep text-faint",
         )}
       >
-        <ArrowUp className={lg ? "h-[18px] w-[18px]" : "h-4 w-4"} strokeWidth={2} />
+        {lg && <span className="hidden sm:inline">Analyse</span>}
+        <ArrowRight className="h-4 w-4" strokeWidth={2} />
       </button>
     </form>
   );

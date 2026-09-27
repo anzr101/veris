@@ -7,16 +7,31 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, Maximize2, Minus, Plus, X } from "lucide-react";
 import type { MapArtifact, MapNode, Paper } from "@/lib/types";
 import { getPaper } from "@/lib/api";
+import { askAbout, formatDate } from "@/lib/corpus";
 import { topicColor } from "@/lib/palette";
 import { ease } from "@/lib/motion";
+import { Corners } from "@/components/ui";
 import { AtlasCanvas, type AtlasHandle } from "./atlas-canvas";
 
-export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; focusArxiv?: string[] }) {
+const L = "left-[max(1.25rem,calc((100vw-1240px)/2+2rem))]";
+const R = "right-[max(1.25rem,calc((100vw-1240px)/2+2rem))]";
+
+export function AtlasView({
+  artifact,
+  focusArxiv,
+  initialTopic = null,
+}: {
+  artifact: MapArtifact;
+  focusArxiv?: string[];
+  initialTopic?: number | null;
+}) {
   const canvas = useRef<AtlasHandle>(null);
   const [hovered, setHovered] = useState<MapNode | null>(null);
   const [selected, setSelected] = useState<MapNode | null>(null);
-  const [topic, setTopic] = useState<number | null>(null);
+  const [topic, setTopic] = useState<number | null>(initialTopic);
   const [paper, setPaper] = useState<Paper | null>(null);
+
+  useEffect(() => setTopic(initialTopic), [initialTopic]);
 
   const highlight = useMemo(() => {
     if (!focusArxiv?.length) return null;
@@ -46,9 +61,11 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
   }, []);
 
   const clusters = useMemo(() => [...artifact.clusters].sort((a, b) => b.size - a.size), [artifact.clusters]);
+  const semantic = artifact.edges.filter((e) => e.kind === "semantic").length;
 
   return (
-    <div className="relative h-[calc(100svh-4rem)] w-full overflow-hidden">
+    <div className="grid-navy relative h-[calc(100svh-4rem)] w-full overflow-hidden bg-navy-deep text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(1000px_600px_at_60%_50%,rgba(31,79,216,0.22),transparent_70%)]" />
       <AtlasCanvas
         ref={canvas}
         nodes={artifact.nodes}
@@ -61,28 +78,45 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
         onSelect={setSelected}
       />
 
-      {/* Title */}
+      {/* Title + readouts */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease }}
-        className="pointer-events-none absolute left-[max(1.25rem,calc((100vw-1180px)/2+2rem))] top-6"
+        className={clsx("pointer-events-none absolute top-7", L)}
       >
-        <h1 className="font-serif text-[44px] leading-none tracking-[-0.02em]">Atlas</h1>
-        <p className="num mt-2 font-mono text-[11.5px] text-muted">
-          {artifact.n_papers.toLocaleString()} papers · {artifact.clusters.length} topics
-          {highlight && highlight.size > 0 && <span className="text-accent"> · {highlight.size} cited</span>}
-        </p>
+        <div className="label-dark flex items-center gap-3">
+          <span className="text-blue-bright">Fig. 02</span>
+          <span className="h-px w-8 bg-navy-line" />
+        </div>
+        <h1 className="mt-3 text-[40px] font-light leading-none tracking-[-0.03em]">Atlas</h1>
+        <div className="mt-4 flex gap-6 text-[12px] text-blue-ice/60">
+          <span>
+            <span className="text-white">{artifact.n_papers}</span> papers
+          </span>
+          <span>
+            <span className="text-white">{artifact.clusters.length}</span> topics
+          </span>
+          <span>
+            <span className="text-white">{semantic}</span> links
+          </span>
+          {highlight && highlight.size > 0 && <span className="text-blue-bright">{highlight.size} cited</span>}
+        </div>
       </motion.div>
 
-      {/* Topics */}
+      {/* Topic filter */}
       <motion.nav
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.25, duration: 0.6, ease }}
-        className="absolute bottom-6 left-[max(1.25rem,calc((100vw-1180px)/2+2rem))] hidden w-[290px] rounded-xl bg-paper/80 p-1 backdrop-blur-sm md:block"
+        className={clsx(
+          "absolute bottom-6 hidden w-[290px] border border-navy-line bg-navy-deep/75 p-1.5 backdrop-blur-md md:block",
+          L,
+        )}
         aria-label="Topics"
       >
+        <Corners dark />
+        <div className="label-dark px-2 pb-1.5 pt-1">Topics</div>
         <ul className="space-y-px">
           {clusters.map((c) => {
             const on = topic === c.id;
@@ -92,14 +126,14 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
                 <button
                   onClick={() => setTopic(on ? null : c.id)}
                   className={clsx(
-                    "flex w-full items-center gap-2.5 rounded-md px-2 py-[5px] text-left text-[13px] transition-all duration-200",
-                    on ? "bg-ink/[0.06] text-ink" : "text-ink-soft hover:bg-ink/[0.04]",
+                    "flex w-full items-center gap-2.5 px-2 py-[5px] text-left text-[12.5px] transition-all duration-200",
+                    on ? "bg-blue/25 text-white" : "text-blue-ice/75 hover:bg-white/[0.05] hover:text-white",
                     dim && "opacity-40",
                   )}
                 >
                   <span className="h-[7px] w-[7px] flex-none rounded-full" style={{ background: topicColor(c.id) }} />
                   <span className="flex-1 truncate">{c.label}</span>
-                  <span className="num font-mono text-[10.5px] text-faint">{c.size}</span>
+                  <span className="text-[11px] text-blue-ice/40">{c.size}</span>
                 </button>
               </li>
             );
@@ -108,7 +142,7 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
       </motion.nav>
 
       {/* Zoom */}
-      <div className="absolute bottom-6 right-[max(1.25rem,calc((100vw-1180px)/2+2rem))] flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-field">
+      <div className={clsx("absolute bottom-6 flex flex-col border border-navy-line bg-navy-deep/75 backdrop-blur-md", R)}>
         {[
           { icon: Plus, label: "Zoom in", fn: () => canvas.current?.zoom(1.5) },
           { icon: Minus, label: "Zoom out", fn: () => canvas.current?.zoom(1 / 1.5) },
@@ -120,8 +154,8 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
             aria-label={label}
             title={label}
             className={clsx(
-              "flex h-9 w-9 items-center justify-center text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink",
-              i > 0 && "border-t border-line",
+              "flex h-9 w-9 items-center justify-center text-blue-ice/70 transition-colors hover:bg-white/[0.06] hover:text-white",
+              i > 0 && "border-t border-navy-line",
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -129,7 +163,7 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
         ))}
       </div>
 
-      {/* Hover label */}
+      {/* Hover readout */}
       <AnimatePresence>
         {hovered && hovered.paper_id !== selected?.paper_id && (
           <motion.div
@@ -137,18 +171,18 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12 }}
-            className="pointer-events-none absolute left-1/2 top-6 w-[min(460px,70vw)] -translate-x-1/2 rounded-xl border border-line bg-surface/95 px-4 py-3 text-center shadow-float backdrop-blur"
+            className="pointer-events-none absolute left-1/2 top-7 w-[min(460px,70vw)] -translate-x-1/2 border border-navy-line bg-navy-deep/90 px-4 py-3 text-center backdrop-blur-md"
           >
-            <div className="flex items-center justify-center gap-2 font-mono text-[10.5px] text-muted">
+            <div className="flex items-center justify-center gap-2 text-[11px] text-blue-ice/60">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: topicColor(hovered.cluster) }} />
-              {hovered.arxiv_id}
+              arXiv:{hovered.arxiv_id}
             </div>
-            <div className="mt-1 text-[14px] leading-snug text-ink">{hovered.title}</div>
+            <div className="mt-1 text-[14px] leading-snug text-white">{hovered.title}</div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Paper */}
+      {/* Specimen panel */}
       <AnimatePresence>
         {selected && (
           <motion.aside
@@ -157,24 +191,31 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 16 }}
             transition={{ duration: 0.3, ease }}
-            className="absolute bottom-24 top-6 flex w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-float right-[max(1.25rem,calc((100vw-1180px)/2+2rem))]"
+            className={clsx(
+              "absolute bottom-24 top-7 flex w-[min(390px,calc(100vw-2.5rem))] flex-col bg-surface text-ink shadow-float",
+              R,
+            )}
           >
+            <Corners />
             <div className="flex items-center justify-between border-b border-line px-5 py-3">
-              <span className="flex items-center gap-2 font-mono text-[11px] text-muted">
+              <span className="flex items-center gap-2 text-[11.5px] text-muted">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: topicColor(selected.cluster) }} />
                 {artifact.clusters.find((c) => c.id === selected.cluster)?.label}
               </span>
               <button
                 onClick={() => setSelected(null)}
-                className="-mr-1 rounded-md p-1 text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink"
+                className="-mr-1 rounded p-1 text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-5">
-              <div className="font-mono text-[11px] text-muted">arXiv:{selected.arxiv_id}</div>
-              <h2 className="mt-2 font-serif text-[25px] leading-[1.12] text-ink">{selected.title}</h2>
+              <div className="flex justify-between text-[11.5px] text-muted">
+                <span>arXiv:{selected.arxiv_id}</span>
+                {paper && <span>{formatDate(paper.published_at)}</span>}
+              </div>
+              <h2 className="mt-2 text-[20px] font-medium leading-[1.25] tracking-[-0.01em]">{selected.title}</h2>
               {paper ? (
                 <>
                   {paper.authors.length > 0 && (
@@ -194,18 +235,10 @@ export function AtlasView({ artifact, focusArxiv }: { artifact: MapArtifact; foc
               )}
             </div>
             <div className="flex gap-2 border-t border-line px-5 py-4">
-              <Link
-                href={`/?q=${encodeURIComponent(`What does the paper "${selected.title}" contribute, and how does it compare to related work?`)}`}
-                className="flex-1 rounded-full bg-ink px-4 py-2 text-center text-[13.5px] text-paper transition-colors hover:bg-accent"
-              >
+              <Link href={askAbout(selected.title)} className="btn-primary flex-1">
                 Ask about this paper
               </Link>
-              <a
-                href={`https://arxiv.org/abs/${selected.arxiv_id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-line px-4 py-2 text-[13.5px] text-ink transition-colors hover:border-ink/30"
-              >
+              <a href={`https://arxiv.org/abs/${selected.arxiv_id}`} target="_blank" rel="noreferrer" className="btn-ghost">
                 arXiv <ArrowUpRight className="h-3.5 w-3.5" />
               </a>
             </div>

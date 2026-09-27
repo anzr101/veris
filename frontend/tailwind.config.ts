@@ -5,33 +5,53 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Paper, ink, one vermilion accent. Status colours are reserved for verification.
-        paper: { DEFAULT: "#F4F3EF", deep: "#ECEAE4" },
-        surface: "#FDFCFA",
-        ink: { DEFAULT: "#141413", soft: "#3B3A37" },
-        muted: "#76746D",
-        faint: "#A9A69E",
-        line: "rgba(20,20,19,0.09)",
-        accent: { DEFAULT: "#C4401C", soft: "rgba(196,64,28,0.08)" },
-        ok: "#2F7A4D",
-        warn: "#A66A12",
-        bad: "#B3261E",
+        // Lab white, deep navy instruments, one working blue. Status colours are reserved
+        // for verification verdicts and system health.
+        paper: { DEFAULT: "#F3F5F9", deep: "#E8ECF3" },
+        surface: "#FFFFFF",
+        ink: { DEFAULT: "#0A1428", soft: "#2A3852" },
+        muted: "#5D6A80",
+        faint: "#97A2B5",
+        line: "rgba(10,20,40,0.09)",
+        navy: {
+          DEFAULT: "#0A1A3F",
+          deep: "#061129",
+          mid: "#0F2656",
+          line: "rgba(150,180,255,0.14)",
+        },
+        blue: {
+          DEFAULT: "#1F4FD8",
+          bright: "#4D7DFF",
+          ice: "#B7CAFF",
+          soft: "rgba(31,79,216,0.07)",
+        },
+        ok: "#0E9F6E",
+        warn: "#C27803",
+        bad: "#D92D20",
       },
       fontFamily: {
-        serif: ['"Instrument Serif"', "Georgia", "serif"],
-        sans: ["Geist", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ['"Geist Mono"', "ui-monospace", "monospace"],
+        sans: ['"IBM Plex Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
       },
       letterSpacing: {
-        label: "0.08em",
+        label: "0.09em",
       },
       boxShadow: {
-        float: "0 1px 2px rgba(20,20,19,0.04), 0 12px 32px -12px rgba(20,20,19,0.14)",
-        field: "0 1px 1px rgba(20,20,19,0.03), 0 8px 24px -16px rgba(20,20,19,0.18)",
+        float: "0 1px 2px rgba(10,20,40,0.05), 0 16px 40px -16px rgba(10,20,40,0.22)",
+        field: "0 1px 1px rgba(10,20,40,0.04), 0 10px 30px -18px rgba(10,20,40,0.3)",
+        glow: "0 0 0 1px rgba(77,125,255,0.35), 0 12px 40px -12px rgba(31,79,216,0.55)",
       },
       maxWidth: {
-        page: "1180px",
-        read: "680px",
+        page: "1240px",
+        read: "700px",
+      },
+      keyframes: {
+        scan: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+      },
+      animation: {
+        scan: "scan 2.4s cubic-bezier(0.45,0,0.2,1) infinite",
       },
     },
   },

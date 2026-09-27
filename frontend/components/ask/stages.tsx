@@ -19,7 +19,7 @@ export function Stages({ stage, failed }: { stage: AskStage; failed?: boolean })
 
   return (
     <div>
-      <div className="flex items-center gap-5 font-mono text-[11px] uppercase tracking-label">
+      <div className="flex items-center gap-5 text-[11px] uppercase tracking-label">
         {STEPS.map((s) => {
           const pos = ORDER.indexOf(s.key);
           const done = current > pos;
@@ -29,13 +29,13 @@ export function Stages({ stage, failed }: { stage: AskStage; failed?: boolean })
               key={s.key}
               className={clsx(
                 "flex items-center gap-1.5 transition-colors duration-300",
-                done ? "text-ink" : active ? "text-accent" : "text-faint",
+                done ? "text-ink" : active ? "text-blue" : "text-faint",
               )}
             >
               <span
                 className={clsx(
                   "h-1 w-1 rounded-full",
-                  done ? "bg-ink" : active ? "animate-pulse bg-accent" : "bg-faint/60",
+                  done ? "bg-ink" : active ? "animate-pulse bg-blue" : "bg-faint/60",
                 )}
               />
               {s.label}
@@ -45,7 +45,7 @@ export function Stages({ stage, failed }: { stage: AskStage; failed?: boolean })
       </div>
       <div className="mt-3 h-px w-full overflow-hidden bg-line">
         <motion.div
-          className={clsx("h-full origin-left", failed ? "bg-warn" : stage === "done" ? "bg-ink" : "bg-accent")}
+          className={clsx("h-full origin-left", failed ? "bg-warn" : stage === "done" ? "bg-ink" : "bg-blue")}
           initial={{ scaleX: 0 }}
           animate={{ scaleX: progress }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}

@@ -2,25 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, RotateCw } from "lucide-react";
-import { AskError, askStream, getMap, getStats } from "@/lib/api";
-import type {
-  AskState,
-  Citation,
-  ClaimVerification,
-  Contradiction,
-  MapArtifact,
-  QueryPlan,
-  Stats,
-} from "@/lib/types";
+import { ArrowRight, Plus, RotateCw } from "lucide-react";
+import { AskError, askStream } from "@/lib/api";
+import type { AskState, Citation, ClaimVerification, Contradiction, QueryPlan } from "@/lib/types";
 import { ease } from "@/lib/motion";
+import { type Run, clearRuns, loadRuns, saveRun } from "@/lib/runs";
+import { Corners } from "@/components/ui";
 import { AskInput } from "./ask-input";
 import { Answer } from "./answer";
 import { Stages } from "./stages";
 import { Sources } from "./sources";
 import { Claims, Contradictions, Faithfulness } from "./verification";
-import { AtlasPreview } from "@/components/atlas/atlas-preview";
 
 const INITIAL: AskState = { stage: "idle", citations: [], answer: "", claims: [], contradictions: [] };
 
@@ -28,14 +22,15 @@ const EXAMPLES = [
   "How are generative world models used in autonomous driving?",
   "How do agents stay policy-compliant when calling tools?",
   "Where do neural operators beat classical PDE solvers?",
+  "What makes LLM-as-judge evaluations unreliable?",
+  "How is mean-field theory applied to reinforcement learning?",
 ];
 
 export function AskView() {
   const [state, setState] = useState<AskState>(INITIAL);
   const [question, setQuestion] = useState("");
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [map, setMap] = useState<MapArtifact | null>(null);
   const [focused, setFocused] = useState<number | null>(null);
+  const [runs, setRuns] = useState<Run[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   const run = useCallback(async (q: string) => {
@@ -62,12 +57,27 @@ export function AskView() {
   }, []);
 
   useEffect(() => {
-    getStats().then(setStats).catch(() => {});
-    getMap().then(setMap).catch(() => {});
+    setRuns(loadRuns());
     const q = new URLSearchParams(window.location.search).get("q");
     if (q) run(q);
     return () => abortRef.current?.abort();
   }, [run]);
+
+  // Log each completed, successful run to the notebook.
+  useEffect(() => {
+    if (state.stage !== "done" || !state.answer || !question) return;
+    setRuns(
+      saveRun({
+        question,
+        at: Date.now(),
+        faithfulness: state.claims.length ? state.faithfulness : undefined,
+        claims: state.claims.length || undefined,
+        sources: new Set(state.citations.map((c) => c.arxiv_id)).size,
+        latency_ms: state.latency_ms,
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.stage]);
 
   const reset = () => {
     abortRef.current?.abort();
@@ -79,126 +89,135 @@ export function AskView() {
   const active = state.stage !== "idle";
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {!active ? (
-        <motion.div
-          key="home"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.15 } }}
-          className="flex flex-1 flex-col"
-        >
-          <Home onAsk={run} stats={stats} map={map} />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="result"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease }}
-          className="mx-auto w-full max-w-page px-5 pb-24 pt-6 sm:px-8"
-        >
-          <Result
-            question={question}
-            state={state}
-            focused={focused}
-            setFocused={setFocused}
-            onAsk={run}
-            onReset={reset}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="mx-auto grid w-full max-w-page flex-1 gap-10 px-5 pb-24 pt-8 sm:px-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-14">
+      <Notebook
+        runs={runs}
+        current={active ? question : null}
+        onPick={run}
+        onNew={reset}
+        onClear={() => {
+          clearRuns();
+          setRuns([]);
+        }}
+      />
+
+      <div className="min-w-0 lg:order-none">
+        <AnimatePresence mode="wait" initial={false}>
+          {!active ? (
+            <motion.div
+              key="idle"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, transition: { duration: 0.12 } }}
+              transition={{ duration: 0.4, ease }}
+              className="lg:pt-10"
+            >
+              <div className="label flex items-center gap-3">
+                <span className="text-blue">Console</span>
+                <span className="h-px w-8 bg-line" />
+              </div>
+              <h1 className="mt-4 text-[38px] font-light leading-[1.05] tracking-[-0.03em] sm:text-[52px]">
+                What do you want to know?
+              </h1>
+              <div className="mt-10 max-w-[760px]">
+                <AskInput onSubmit={run} autoFocus />
+              </div>
+              <div className="mt-12 max-w-[760px]">
+                <div className="label">Suggested</div>
+                <ul className="mt-3 border-t border-line">
+                  {EXAMPLES.map((q, i) => (
+                    <li key={q} className="border-b border-line">
+                      <button
+                        onClick={() => run(q)}
+                        className="group flex w-full items-center gap-5 py-3.5 text-left text-[15px] text-ink-soft transition-colors hover:text-blue"
+                      >
+                        <span className="w-6 text-[12px] text-faint">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="flex-1">{q}</span>
+                        <ArrowRight className="h-4 w-4 -translate-x-1 text-blue opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease }}
+            >
+              <Result
+                question={question}
+                state={state}
+                focused={focused}
+                setFocused={setFocused}
+                onAsk={run}
+                onReset={reset}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }
 
-function Home({
-  onAsk,
-  stats,
-  map,
+function Notebook({
+  runs,
+  current,
+  onPick,
+  onNew,
+  onClear,
 }: {
-  onAsk: (q: string) => void;
-  stats: Stats | null;
-  map: MapArtifact | null;
+  runs: Run[];
+  current: string | null;
+  onPick: (q: string) => void;
+  onNew: () => void;
+  onClear: () => void;
 }) {
   return (
-    <div className="flex flex-1 flex-col">
-      <section className="mx-auto w-full max-w-[760px] px-5 pt-[10vh] sm:px-8 sm:pt-[14vh]">
-        <motion.h1
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease }}
-          className="text-center font-serif font-normal leading-[0.95] tracking-[-0.025em] text-ink"
-          style={{ fontSize: "clamp(3.1rem, 8vw, 6rem)" }}
-        >
-          Ask the <em className="italic">literature</em>.
-        </motion.h1>
-
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.8, ease }}
-          className="mt-10 sm:mt-12"
-        >
-          <AskInput onSubmit={onAsk} autoFocus />
-        </motion.div>
-
-        <motion.ul
-          initial="hidden"
-          animate="show"
-          variants={{ show: { transition: { staggerChildren: 0.06, delayChildren: 0.3 } } }}
-          className="mt-6 flex flex-col items-stretch gap-0.5"
-        >
-          {EXAMPLES.map((q) => (
-            <motion.li
-              key={q}
-              variants={{
-                hidden: { opacity: 0, y: 6 },
-                show: { opacity: 1, y: 0, transition: { duration: 0.5, ease } },
-              }}
-            >
+    <aside className="order-last lg:order-first lg:sticky lg:top-24 lg:self-start">
+      <button onClick={onNew} className="btn-ghost w-full justify-start">
+        <Plus className="h-4 w-4" /> New question
+      </button>
+      <div className="mt-8 flex items-center justify-between">
+        <span className="label">Notebook</span>
+        {runs.length > 0 && (
+          <button onClick={onClear} className="text-[11px] text-faint transition-colors hover:text-bad">
+            Clear
+          </button>
+        )}
+      </div>
+      {runs.length === 0 ? (
+        <p className="mt-3 border-t border-line pt-3 text-[13px] text-faint">No runs yet.</p>
+      ) : (
+        <ul className="mt-3 max-h-[60vh] overflow-y-auto border-t border-line">
+          {runs.map((r) => (
+            <li key={r.at}>
               <button
-                onClick={() => onAsk(q)}
-                className="group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-2.5 text-left text-[14.5px] text-muted transition-colors duration-200 hover:bg-ink/[0.035] hover:text-ink"
+                onClick={() => onPick(r.question)}
+                className={clsx(
+                  "block w-full border-b border-line py-3 pl-3 pr-1 text-left transition-colors",
+                  r.question === current ? "border-l-2 border-l-blue bg-blue-soft" : "hover:bg-ink/[0.025]",
+                )}
               >
-                <span>{q}</span>
-                <ArrowRight className="h-3.5 w-3.5 flex-none -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
+                <span className="line-clamp-2 text-[13px] leading-snug text-ink-soft">{r.question}</span>
+                <span className="mt-1.5 flex gap-3 text-[11px] text-faint">
+                  {typeof r.faithfulness === "number" && (
+                    <span className={r.faithfulness >= 0.8 ? "text-ok" : "text-warn"}>
+                      {Math.round(r.faithfulness * 100)}% verified
+                    </span>
+                  )}
+                  {r.sources ? <span>{r.sources} sources</span> : null}
+                  {r.latency_ms ? <span>{(r.latency_ms / 1000).toFixed(1)} s</span> : null}
+                </span>
               </button>
-            </motion.li>
+            </li>
           ))}
-        </motion.ul>
-      </section>
-
-      <motion.section
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4, duration: 0.8 }}
-        className="mx-auto mt-auto w-full max-w-page px-5 pb-8 pt-12 sm:px-8"
-      >
-        <Link href="/atlas" className="group block" aria-label="Open the atlas">
-          <div className="hidden h-[190px] sm:block">
-            {map && map.nodes.length > 0 && <AtlasPreview artifact={map} />}
-          </div>
-          <div className="flex items-center justify-between border-t border-line pt-4 font-mono text-[11.5px] text-muted sm:mt-5">
-            <span className="num flex flex-wrap gap-x-6 gap-y-1">
-              {stats ? (
-                <>
-                  <span><span className="text-ink">{stats.papers.toLocaleString()}</span> papers</span>
-                  <span><span className="text-ink">{stats.chunks.toLocaleString()}</span> passages</span>
-                  {map && <span className="hidden sm:inline"><span className="text-ink">{map.clusters.length}</span> topics</span>}
-                </>
-              ) : (
-                <span className="skeleton h-3 w-48 rounded" />
-              )}
-            </span>
-            <span className="flex items-center gap-1.5 transition-colors group-hover:text-ink">
-              Atlas
-              <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-            </span>
-          </div>
-        </Link>
-      </motion.section>
-    </div>
+        </ul>
+      )}
+    </aside>
   );
 }
 
@@ -220,16 +239,15 @@ function Result({
   const busy = state.stage !== "done";
   const failed = Boolean(state.error) && !state.answer;
   const hasVerification = typeof state.faithfulness === "number" && state.claims.length > 0;
+  const sourceIds = [...new Set(state.citations.map((c) => c.arxiv_id))];
 
   return (
     <>
-      <div className="mx-auto max-w-[760px]">
-        <AskInput onSubmit={onAsk} initial={question} size="sm" busy={busy} />
-      </div>
+      <AskInput onSubmit={onAsk} initial={question} size="sm" busy={busy} />
 
-      <div className="mt-14 grid grid-cols-1 gap-x-16 gap-y-14 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="mt-12 grid grid-cols-1 gap-x-12 gap-y-14 xl:grid-cols-[minmax(0,1fr)_290px]">
         <article className="min-w-0 max-w-read">
-          <h1 className="font-serif text-[34px] font-normal leading-[1.1] tracking-[-0.015em] text-ink sm:text-[42px]">
+          <h1 className="text-[30px] font-light leading-[1.15] tracking-[-0.025em] text-ink sm:text-[36px]">
             {question}
           </h1>
           <div className="mt-7">
@@ -276,15 +294,12 @@ function Result({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
-              className="num mt-14 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-4 font-mono text-[11.5px] text-muted"
+              className="mt-14 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-5 text-[12.5px] text-muted"
             >
               {state.model && <span>{state.model}</span>}
-              {typeof state.latency_ms === "number" && <span>{(state.latency_ms / 1000).toFixed(1)}s</span>}
-              {state.citations.length > 0 && (
-                <Link
-                  href={`/atlas?ids=${[...new Set(state.citations.map((c) => c.arxiv_id))].join(",")}`}
-                  className="text-ink underline decoration-line underline-offset-4 transition-colors hover:decoration-ink"
-                >
+              {typeof state.latency_ms === "number" && <span>{(state.latency_ms / 1000).toFixed(1)} s</span>}
+              {sourceIds.length > 0 && (
+                <Link href={`/atlas?ids=${sourceIds.join(",")}`} className="text-blue hover:underline">
                   Locate sources in atlas
                 </Link>
               )}
@@ -295,14 +310,16 @@ function Result({
           )}
         </article>
 
-        <aside className="space-y-12 lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-10 xl:sticky xl:top-24 xl:self-start">
           <AnimatePresence>
             {hasVerification && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease }}
+                className="panel p-5"
               >
+                <Corners />
                 <Faithfulness value={state.faithfulness!} claims={state.claims} />
               </motion.div>
             )}
@@ -314,7 +331,7 @@ function Result({
               <div className="space-y-3">
                 <div className="label">Sources</div>
                 {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="skeleton h-10 rounded-lg" style={{ animationDelay: `${i * 0.1}s` }} />
+                  <div key={i} className="skeleton h-10 rounded" style={{ animationDelay: `${i * 0.1}s` }} />
                 ))}
               </div>
             )
@@ -327,12 +344,10 @@ function Result({
 
 function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-6">
-      <p className="font-serif text-[22px] leading-snug text-ink">{message}</p>
-      <button
-        onClick={onRetry}
-        className="mt-5 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-[13.5px] text-paper transition-colors hover:bg-accent"
-      >
+    <div className="panel p-6">
+      <Corners />
+      <p className="text-[19px] font-light leading-snug text-ink">{message}</p>
+      <button onClick={onRetry} className="btn-primary mt-5">
         <RotateCw className="h-3.5 w-3.5" />
         Try again
       </button>
@@ -344,11 +359,7 @@ function Skeleton() {
   return (
     <div className="space-y-3">
       {[100, 97, 92, 99, 64].map((w, i) => (
-        <div
-          key={i}
-          className="skeleton h-[14px] rounded"
-          style={{ width: `${w}%`, animationDelay: `${i * 0.08}s` }}
-        />
+        <div key={i} className="skeleton h-[14px] rounded" style={{ width: `${w}%`, animationDelay: `${i * 0.08}s` }} />
       ))}
     </div>
   );
